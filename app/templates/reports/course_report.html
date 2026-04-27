@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-primary text-white">
+        <h4 class="mb-0"><i class="fas fa-file-alt me-2"></i>Report: {{ course.code }} - {{ course.name }}</h4>
+    </div>
+    <div class="card-body">
+        <p><strong>Semester:</strong> {{ course.semester }} {{ course.academic_year }} |
+           <strong>Responses:</strong> {{ stats.num_responses }}</p>
+        <p><strong>Lecturer:</strong> {{ stats.lecturer }}</p>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="card text-white bg-primary shadow-sm">
+            <div class="card-body text-center">
+                <h5>Course Mean</h5>
+                <p class="display-6">{{ "%.2f"|format(stats.overall_mean) if stats.overall_mean else 'N/A' }} / 5.0</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-accent shadow-sm">
+            <div class="card-body text-center">
+                <h5>College Mean</h5>
+                <p class="display-6">{{ "%.2f"|format(stats.college_mean) if stats.college_mean is defined and stats.college_mean is not none else 'N/A' }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-secondary shadow-sm">
+            <div class="card-body text-center">
+                <h5>Responses</h5>
+                <p class="display-6">{{ stats.num_responses }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Insights and Prediction -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header bg-info text-white"><h5 class="mb-0"><i class="fas fa-lightbulb me-2"></i>Key Insights</h5></div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    {% for ins in insights %}
+                    <li class="list-group-item">{{ ins }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card shadow-sm border-warning">
+            <div class="card-header bg-warning text-dark"><h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>Prediction</h5></div>
+            <div class="card-body">
+                <p>{{ prediction }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts -->
+<div class="row g-4 mb-4">
+    {% if charts.section_bar %}
+    <div class="col-md-6">
+        <div class="card shadow-sm"><div class="card-body">{{ charts.section_bar|safe }}</div></div>
+    </div>
+    {% endif %}
+    {% if charts.radar %}
+    <div class="col-md-6">
+        <div class="card shadow-sm"><div class="card-body">{{ charts.radar|safe }}</div></div>
+    </div>
+    {% endif %}
+    {% if charts.pie %}
+    <div class="col-md-6">
+        <div class="card shadow-sm"><div class="card-body">{{ charts.pie|safe }}</div></div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Frequency Distribution Tables -->
+{% if stats.sections %}
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-secondary text-white">
+        <h5 class="mb-0"><i class="fas fa-table me-2"></i>Frequency Distribution (Likert Questions)</h5>
+    </div>
+    <div class="card-body">
+        {% for sec in stats.sections %}
+            {% if sec.likert_questions %}
+            <h6 class="text-accent">{{ sec.title }}</h6>
+            <div class="table-responsive mb-3">
+                <table class="table table-bordered table-sm">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Question</th>
+                            <th>Mean</th>
+                            <th>1</th>
+                            <th>2</th>
+                            <th>3</th>
+                            <th>4</th>
+                            <th>5</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for q in sec.likert_questions %}
+                        <tr>
+                            <td>{{ q.text[:60] }}{% if q.text|length > 60 %}...{% endif %}</td>
+                            <td>{{ "%.2f"|format(q.mean) if q.mean is not none else '-' }}</td>
+                            <td>{{ q.frequency.get(1, 0) }}</td>
+                            <td>{{ q.frequency.get(2, 0) }}</td>
+                            <td>{{ q.frequency.get(3, 0) }}</td>
+                            <td>{{ q.frequency.get(4, 0) }}</td>
+                            <td>{{ q.frequency.get(5, 0) }}</td>
+                            <td>{{ q.count }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Student Comments -->
+{% if stats.sections %}
+<div class="card shadow-sm mt-4">
+    <div class="card-header bg-secondary text-white"><h5 class="mb-0"><i class="fas fa-comments me-2"></i>Student Comments</h5></div>
+    <div class="card-body">
+        {% for sec in stats.sections %}
+            {% if sec.text_questions %}
+            <h6>{{ sec.title }}</h6>
+            {% for tq in sec.text_questions %}
+                <p><strong>{{ tq.text }}</strong></p>
+                <ul>
+                    {% for comment in tq.comments[:5] %}
+                    <li>{{ comment }}</li>
+                    {% endfor %}
+                </ul>
+            {% endfor %}
+            <hr>
+            {% endif %}
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<div class="mt-4">
+    <a href="{{ url_for('reports.download_pdf', course_id=course.id) }}" class="btn btn-primary"><i class="fas fa-download me-2"></i>Download PDF Report</a>
+</div>
+{% endblock %}

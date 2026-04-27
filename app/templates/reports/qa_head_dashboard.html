@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block content %}
+<h2 class="mb-4"><i class="fas fa-chart-line me-2 text-primary"></i>Campus Participation Report</h2>
+<div class="row g-4">
+    {% for cd in campus_data %}
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header bg-accent text-white">
+                <h5>{{ cd.campus.name }} ({{ cd.campus.location or '' }})</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Courses:</strong> {{ cd.total_courses }}</p>
+                <p><strong>Evaluations:</strong> {{ cd.total_evals }} / {{ cd.possible_evals }}</p>
+                <p><strong>Participation:</strong> {{ cd.participation }}%</p>
+                <p><strong>Average Score:</strong> {{ cd.avg_score if cd.avg_score is not none else 'N/A' }}</p>
+                <a href="{{ url_for('reports.campus_report', campus_id=cd.campus.id) }}" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-download"></i> Download Campus Report
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

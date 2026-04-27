@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block content %}
+<h2><i class="fas fa-filter me-2"></i>Select Your Programme</h2>
+<form method="post" action="{{ url_for('evaluation.filter_courses') }}">
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label>Department</label>
+            <select name="department_id" class="form-select" required>
+                <option value="">-- Choose Department --</option>
+                {% for d in departments %}
+                <option value="{{ d.id }}">{{ d.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-6 mb-3">
+            <label>Programme</label>
+            <select name="programme_id" class="form-select" required>
+                <option value="">-- Choose Programme --</option>
+                {% for p in programmes %}
+                <option value="{{ p.id }}">{{ p.name }} ({{ p.department.name }})</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-4 mb-3">
+            <label>Level</label>
+            <select name="level" class="form-select">
+                <option value="">All</option>
+                <option>NTA Level 4</option>
+                <option>NTA Level 5</option>
+                <option>NTA Level 6</option>
+                <option>Degree</option>
+            </select>
+        </div>
+        <div class="col-md-4 mb-3">
+            <label>Academic Year</label>
+            <input type="text" name="academic_year" class="form-control" placeholder="e.g. 2025/2026">
+        </div>
+        <div class="col-md-4 mb-3">
+            <label>Semester</label>
+            <select name="semester" class="form-select">
+                <option value="">All</option>
+                <option>Semester 1</option>
+                <option>Semester 2</option>
+            </select>
+        </div>
+    </div>
+    <button type="submit" class="btn btn-primary">Show Modules</button>
+</form>
+{% endblock %}

@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+        <h4 class="mb-0"><i class="fas fa-edit me-2"></i>Edit Form: {{ form.title }}</h4>
+        <div>
+            <a href="{{ url_for('forms_manager.form_settings', form_id=form.id) }}" class="btn btn-outline-light btn-sm me-2"><i class="fas fa-cog"></i> Settings</a>
+            <a href="{{ url_for('forms_manager.preview_form', form_id=form.id) }}" class="btn btn-light btn-sm"><i class="fas fa-eye"></i> Preview</a>
+        </div>
+    </div>
+    <div class="card-body">
+        <p>{{ form.description }}</p>
+        <p><strong>Target Level:</strong> {{ form.target_level or 'All' }}</p>
+        <hr>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5>Sections & Questions</h5>
+            <button class="btn btn-success btn-sm" id="addSectionBtn"><i class="fas fa-plus"></i> Add Section</button>
+        </div>
+
+        <!-- Sections Tabs -->
+        <ul class="nav nav-tabs" id="sectionTabs" role="tablist">
+            {% for sdata in section_data %}
+            <li class="nav-item" role="presentation">
+                <button class="nav-link {% if loop.first %}active{% endif %}" id="section-tab-{{ sdata.section.id }}"
+                    data-bs-toggle="tab" data-bs-target="#section-{{ sdata.section.id }}" type="button" role="tab">
+                    {{ sdata.section.title }}
+                    <span class="badge bg-secondary ms-1">{{ sdata.questions|length }}</span>
+                </button>
+            </li>
+            {% endfor %}
+        </ul>
+
+        <div class="tab-content p-3 border border-top-0 rounded-bottom" id="sectionTabsContent">
+            {% for sdata in section_data %}
+            <div class="tab-pane fade {% if loop.first %}show active{% endif %}" id="section-{{ sdata.section.id }}" role="tabpanel">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6>Section: <span class="section-title-display">{{ sdata.section.title }}</span></h6>
+                    <div>
+                        <button class="btn btn-sm btn-outline-secondary edit-section-btn" data-id="{{ sdata.section.id }}" data-title="{{ sdata.section.title }}"><i class="fas fa-edit"></i> Rename</button>
+                        <button class="btn btn-sm btn-outline-danger delete-section-btn" data-id="{{ sdata.section.id }}"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>
+                <!-- Questions list -->
+                <ul class="list-group sortable-questions" data-section-id="{{ sdata.section.id }}">
+                    {% for q in sdata.questions %}
+                    <li class="list-group-item" data-id="{{ q.id }}" data-order="{{ q.order }}">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="fas fa-grip-vertical me-2 text-muted handle" style="cursor:move;"></i>
+                                <strong>{{ q.question_text }}</strong>
+                                <span class="badge bg-info ms-2">{{ q.question_type }}</span>
+                                {% if q.required %}<span class="badge bg-warning text-dark">Required</span>{% endif %}
+                                {% if q.go_to_section_id %}<span class="badge bg-success">Jump to section</span>{% endif %}
+                            </div>
+                            <div>
+                                <button class="btn btn-sm btn-outline-primary edit-question-btn"
+                                    data-id="{{ q.id }}"><i class="fas fa-edit"></i></button>
+                                <button class="btn btn-sm btn-outline-danger delete-question-btn" data-id="{{ q.id }}"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>
+                        {% if q.parent_question_id %}
+                        <small class="text-muted ms-4">Shown if condition matches</small>
+                        {% endif %}
+                        {% if q.go_to_section_id %}
+                        <small class="text-muted ms-4">Go to section: {{ q.jump_to_section.title if q.jump_to_section else '??' }}</small>
+                        {% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+                <button class="btn btn-sm btn-primary add-question-btn mt-2" data-section-id="{{ sdata.section.id }}"><i class="fas fa-plus"></i> Add Question</button>
+            </div>
+            {% endfor %}
+        </div>
+        <a href="{{ url_for('forms_manager.list_forms') }}" class="btn btn-secondary mt-3">Back to List</a>
+    </div>
+</div>
+
+{% include "forms_manager/_question_modals.html" %}
+
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<script>
+const allQuestionsData = {{ all_questions_dict|tojson|safe }};
+
+document.querySelectorAll('.sortable-questions').forEach(el => {
+    new Sortable(el, {
+        handle: '.handle',
+        animation: 150,
+        onEnd: function() {
+            let items = el.querySelectorAll('li');
+            let orderData = Array.from(items).map((item, index) => ({ id: item.dataset.id, order: index + 1 }));
+            fetch('/forms/questions/reorder', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({order: orderData})
+            });
+        }
+    });
+});
+
+document.getElementById('addSectionBtn').addEventListener('click', function() {
+    let title = prompt('Enter section title:');
+    if (!title) return;
+    fetch('/forms/{{ form.id }}/sections/add', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({title: title})
+    }).then(r => r.json()).then(data => {
+        if (data.success) location.reload();
+    });
+});
+
+document.querySelectorAll('.edit-section-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        let id = this.dataset.id;
+        let currentTitle = this.dataset.title;
+        let newTitle = prompt('Edit section title:', currentTitle);
+        if (newTitle) {
+            fetch(`/forms/sections/${id}/update`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({title: newTitle})
+            }).then(r => r.json()).then(data => {
+                if (data.success) location.reload();
+            });
+        }
+    });
+});
+document.querySelectorAll('.delete-section-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        if (!confirm('Delete this section and all its questions?')) return;
+        fetch(`/forms/sections/${this.dataset.id}/delete`, { method: 'POST' })
+        .then(r => r.json()).then(data => { if (data.success) location.reload(); });
+    });
+});
+
+document.querySelectorAll('.add-question-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        let sectionId = this.dataset.sectionId;
+        document.getElementById('qSectionId').value = sectionId;
+        document.getElementById('questionForm').reset();
+        document.getElementById('questionForm').dataset.editId = '';
+        var modal = new bootstrap.Modal(document.getElementById('questionModal'));
+        modal.show();
+    });
+});
+
+document.querySelectorAll('.edit-question-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        let qid = parseInt(this.dataset.id);
+        let qData = allQuestionsData.find(q => q.id === qid);
+        if (!qData) return;
+        document.getElementById('questionForm').reset();
+        document.getElementById('questionForm').dataset.editId = qData.id;
+        document.getElementById('qText').value = qData.question_text || '';
+        document.getElementById('qType').value = qData.question_type || 'likert';
+        document.getElementById('qRequired').checked = qData.required;
+        document.getElementById('qCategory').value = qData.category || '';
+        if (qData.options.length) {
+            document.getElementById('qOptions').value = qData.options.join('\n');
+        } else {
+            document.getElementById('qOptions').value = '';
+        }
+        document.getElementById('qParentQuestion').value = qData.parent_question_id || '';
+        document.getElementById('qConditionValue').value = qData.condition_value || '';
+        document.getElementById('qGoToSection').value = qData.go_to_section_id || '';
+        document.getElementById('optionsSection').style.display = (qData.question_type === 'multiple_choice' || qData.question_type === 'checkbox') ? 'block' : 'none';
+        document.getElementById('conditionValueSection').style.display = qData.parent_question_id ? 'block' : 'none';
+        var modal = new bootstrap.Modal(document.getElementById('questionModal'));
+        modal.show();
+    });
+});
+
+document.querySelectorAll('.delete-question-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        if (!confirm('Delete this question?')) return;
+        fetch(`/forms/questions/${this.dataset.id}/delete`, { method: 'POST' })
+        .then(r => r.json()).then(data => { if (data.success) location.reload(); });
+    });
+});
+</script>
+{% endblock %}

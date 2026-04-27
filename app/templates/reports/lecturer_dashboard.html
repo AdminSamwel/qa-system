@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+<h2 class="mb-4"><i class="fas fa-chalkboard me-2 text-primary"></i>My Courses Summary</h2>
+{% if stats %}
+    <div class="table-responsive shadow-sm">
+        <table class="table table-hover align-middle">
+            <thead class="table-primary">
+                <tr><th>Course</th><th>Responses</th><th>Overall Mean</th><th>Report</th></tr>
+            </thead>
+            <tbody>
+                {% for s in stats %}
+                <tr>
+                    <td>{{ s.course_code }} - {{ s.course_name }}</td>
+                    <td>{{ s.num_responses }}</td>
+                    <td>{{ "%.2f"|format(s.overall_mean) if s.overall_mean else 'N/A' }}</td>
+                    <td><a href="{{ url_for('reports.course_report', course_id=s.course_id) }}" class="btn btn-sm btn-outline-primary">View</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <div class="alert alert-info">No evaluation data available.</div>
+{% endif %}
+{% endblock %}

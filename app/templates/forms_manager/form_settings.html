@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="fas fa-cog me-2"></i>Form Settings: {{ form.title }}</h4>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {{ settings_form.hidden_tag() }}
+                    <div class="mb-3">
+                        <label class="form-label">{{ settings_form.show_progress.label }}</label>
+                        {{ settings_form.show_progress(class="form-select") }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{{ settings_form.deadline.label }}</label>
+                        {{ settings_form.deadline(class="form-control", placeholder="YYYY-MM-DD HH:MM e.g. 2026-05-01 23:59") }}
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save Settings</button>
+                    <a href="{{ url_for('forms_manager.edit_form', form_id=form.id) }}" class="btn btn-secondary">Back to Form</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

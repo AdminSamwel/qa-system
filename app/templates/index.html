@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="bg-accent text-white p-4 rounded shadow-sm">
+            <h1 class="display-5 fw-bold"><i class="fas fa-chalkboard-teacher me-3"></i>Welcome, {{ current_user.full_name }}!</h1>
+            <p class="lead">You are logged in as <strong>{{ current_user.role|capitalize }}</strong>.</p>
+        </div>
+    </div>
+</div>
+<div class="row g-4">
+    <div class="col-md-6 col-lg-3">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body text-center">
+                <div class="display-4 text-primary mb-3"><i class="fas fa-edit"></i></div>
+                <h5 class="card-title">Evaluations</h5>
+                <p class="card-text">View courses and submit evaluations.</p>
+                <a href="{{ url_for('evaluation.list_courses') }}" class="btn btn-outline-primary">Go to Evaluations</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-3">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body text-center">
+                <div class="display-4 text-primary mb-3"><i class="fas fa-chart-pie"></i></div>
+                <h5 class="card-title">Reports</h5>
+                <p class="card-text">Analyze feedback and view insights.</p>
+                <a href="{{ url_for('reports.dashboard') }}" class="btn btn-outline-primary">View Reports</a>
+            </div>
+        </div>
+    </div>
+    {% if current_user.role in ['qa_officer', 'admin'] %}
+    <div class="col-md-6 col-lg-3">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body text-center">
+                <div class="display-4 text-primary mb-3"><i class="fas fa-file-alt"></i></div>
+                <h5 class="card-title">Form Builder</h5>
+                <p class="card-text">Create and manage evaluation forms.</p>
+                <a href="{{ url_for('forms_manager.list_forms') }}" class="btn btn-outline-primary">Manage Forms</a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    <div class="col-md-6 col-lg-3">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body text-center">
+                <div class="display-4 text-primary mb-3"><i class="fas fa-info-circle"></i></div>
+                <h5 class="card-title">Help & Support</h5>
+                <p class="card-text">Access guides and contact QA office.</p>
+                <a href="#" class="btn btn-outline-primary">Get Help</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

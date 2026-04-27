@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QA System | Tanzanian College</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <!-- Plotly for charts -->
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <!-- Bootstrap 5 JS (for navbar toggler) -->
+    <script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</head>
+<body>
+    <!-- Skip to content link for keyboard users -->
+    <a href="#mainContent" class="skip-link">Skip to main content</a>
+
+    <!-- Top bar with contact / quick sharing links -->
+    <div class="top-bar bg-dark text-white py-1">
+        <div class="container d-flex justify-content-between">
+            <div>
+                <i class="fas fa-phone-alt me-2"></i> +255 22 212 3456
+                <i class="fas fa-envelope ms-3 me-2"></i> qa@college.ac.tz
+            </div>
+            <div>
+                <!-- WhatsApp share link -->
+                <a href="https://wa.me/?text=Check%20out%20Tanzanian%20College%20QA%20System" class="text-white me-3" target="_blank" rel="noopener" title="Share via WhatsApp">
+                    <i class="fab fa-whatsapp"></i>
+                </a>
+                <!-- Email share link -->
+                <a href="mailto:?subject=Tanzanian%20College%20QA%20System&body=I%20wanted%20to%20share%20this%20QA%20system%20with%20you." class="text-white" target="_blank" rel="noopener" title="Share via Email">
+                    <i class="fas fa-envelope"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary py-3" role="navigation" aria-label="Main navigation">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="{{ url_for('main.index') }}">
+                <i class="fas fa-check-circle me-2"></i>College QA System
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain" 
+                    aria-controls="navbarMain" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarMain">
+                <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-center">
+                    {% if current_user.is_authenticated %}
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('main.index') }}"><i class="fas fa-home me-1"></i>Home</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('evaluation.list_courses') }}"><i class="fas fa-clipboard-list me-1"></i>Evaluations</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('reports.dashboard') }}"><i class="fas fa-chart-bar me-1"></i>Reports</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('main.help_page') }}"><i class="fas fa-question-circle me-1"></i>Help</a></li>
+                        {% if current_user.role in ['qa_officer', 'admin'] %}
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('forms_manager.list_forms') }}"><i class="fas fa-file-alt me-1"></i>Forms</a></li>
+                        {% endif %}
+                        {% if current_user.role in ['admin', 'qa_officer'] %}
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                                    <i class="fas fa-cogs me-1"></i>Setup
+                                </a>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="{{ url_for('admin.list_campuses') }}">Campuses</a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('admin.list_departments') }}">Departments</a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('admin.list_programmes') }}">Programmes</a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('admin.list_courses') }}">Modules</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('admin.user_list') }}">Users</a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('admin.list_enrollments') }}">Enrollments</a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('admin.list_messages') }}">Messages</a></li>
+                                </ul>
+                            </li>
+                        {% endif %}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-user-circle me-1"></i>{{ current_user.full_name }} ({{ current_user.role|capitalize }})
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="{{ url_for('main.profile') }}"><i class="fas fa-user-edit me-2"></i>Profile</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                            </ul>
+                        </li>
+                    {% else %}
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.login') }}">Login</a></li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Flash Messages -->
+    <div class="container mt-3">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, msg in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ msg }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- Main Content -->
+    <main class="container my-4" id="mainContent" tabindex="-1">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-4 mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5 class="text-accent">Tanzanian College QA System</h5>
+                    <p class="small">Ensuring quality education through continuous improvement.</p>
+                </div>
+                <div class="col-md-3">
+                    <h6>Quick Links</h6>
+                    <ul class="list-unstyled">
+                        <li><a href="{{ url_for('main.index') }}" class="text-white-50">Home</a></li>
+                        <li><a href="{{ url_for('evaluation.list_courses') }}" class="text-white-50">Evaluations</a></li>
+                        <li><a href="{{ url_for('reports.dashboard') }}" class="text-white-50">Reports</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-3">
+                    <h6>Contact</h6>
+                    <ul class="list-unstyled text-white-50">
+                        <li><i class="fas fa-map-marker-alt me-2"></i> Dar es Salaam, Tanzania</li>
+                        <li><i class="fas fa-phone-alt me-2"></i> +255 22 212 3456</li>
+                        <li><i class="fas fa-envelope me-2"></i> qa@college.ac.tz</li>
+                    </ul>
+                </div>
+            </div>
+            <hr class="bg-secondary">
+            <div class="text-center small">
+                &copy; 2026 Tanzanian College. All rights reserved.
+            </div>
+        </div>
+    </footer>
+
+    <!-- Accessibility Panel -->
+    <div class="accessibility-panel" id="accessibilityPanel" aria-hidden="true">
+        <button class="panel-toggle" id="panelToggle" title="Accessibility Options" aria-label="Toggle accessibility panel">
+            <i class="fas fa-universal-access"></i>
+        </button>
+        <div class="panel-content" id="panelContent">
+            <h6>Accessibility Tools</h6>
+            <div class="mb-3">
+                <label for="textSizeSlider" class="form-label">Text Size: <span id="textSizeValue">100%</span></label>
+                <input type="range" class="form-range" id="textSizeSlider" min="100" max="200" value="100" step="10" aria-label="Adjust text size">
+            </div>
+            <button id="readPageBtn" class="btn btn-primary w-100 mb-2"><i class="fas fa-play me-1"></i> Read Page</button>
+            <button id="stopReadBtn" class="btn btn-secondary w-100" style="display:none;"><i class="fas fa-stop me-1"></i> Stop Reading</button>
+        </div>
+    </div>
+
+    <script>
+        // Accessibility Panel functionality
+        (function() {
+            const panel = document.getElementById('accessibilityPanel');
+            const toggle = document.getElementById('panelToggle');
+            const content = document.getElementById('panelContent');
+            const textSizeSlider = document.getElementById('textSizeSlider');
+            const textSizeValue = document.getElementById('textSizeValue');
+            const readPageBtn = document.getElementById('readPageBtn');
+            const stopReadBtn = document.getElementById('stopReadBtn');
+            const mainContent = document.getElementById('mainContent');
+
+            // Show/hide panel
+            toggle.addEventListener('click', function() {
+                const isOpen = content.style.display === 'block';
+                content.style.display = isOpen ? 'none' : 'block';
+                panel.setAttribute('aria-hidden', isOpen);
+                if (!isOpen) document.getElementById('textSizeSlider').focus();
+            });
+
+            // Text size slider
+            const savedSize = localStorage.getItem('textSize') || 100;
+            textSizeSlider.value = savedSize;
+            applyTextSize(savedSize);
+            textSizeSlider.addEventListener('input', function() {
+                const size = this.value;
+                textSizeValue.textContent = size + '%';
+                applyTextSize(size);
+                localStorage.setItem('textSize', size);
+            });
+
+            function applyTextSize(percentage) {
+                const scale = percentage / 100;
+                document.documentElement.style.fontSize = (16 * scale) + 'px'; // base 16px
+            }
+
+            // Read aloud using Web Speech API
+            let synth = window.speechSynthesis;
+            let utterance = null;
+
+            readPageBtn.addEventListener('click', function() {
+                if (synth.speaking) {
+                    synth.cancel();
+                }
+                const text = mainContent.innerText.trim();
+                if (!text) return;
+                utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'en-US'; // or 'sw' for Swahili, but system might not support
+                utterance.rate = 0.9;
+                utterance.onstart = function() {
+                    readPageBtn.style.display = 'none';
+                    stopReadBtn.style.display = 'inline-block';
+                };
+                utterance.onend = function() {
+                    readPageBtn.style.display = 'inline-block';
+                    stopReadBtn.style.display = 'none';
+                };
+                utterance.onerror = function() {
+                    readPageBtn.style.display = 'inline-block';
+                    stopReadBtn.style.display = 'none';
+                };
+                synth.speak(utterance);
+            });
+
+            stopReadBtn.addEventListener('click', function() {
+                synth.cancel();
+                readPageBtn.style.display = 'inline-block';
+                stopReadBtn.style.display = 'none';
+            });
+
+            // Close panel when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!panel.contains(e.target) && e.target !== toggle) {
+                    content.style.display = 'none';
+                    panel.setAttribute('aria-hidden', 'true');
+                }
+            });
+        })();
+    </script>
+</body>
+</html>

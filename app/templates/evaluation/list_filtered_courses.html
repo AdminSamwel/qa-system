@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+<h2><i class="fas fa-list me-2"></i>Modules for Selected Programme</h2>
+<a href="{{ url_for('evaluation.list_courses') }}" class="btn btn-outline-secondary mb-3"><i class="fas fa-arrow-left"></i> Change Selection</a>
+<div class="list-group">
+    {% for item in course_status %}
+    <div class="list-group-item d-flex justify-content-between align-items-center">
+        <div>
+            <strong>{{ item.course.code }} - {{ item.course.name }}</strong><br>
+            <small>{{ item.course.level }} | {{ item.course.semester }} {{ item.course.academic_year }}</small>
+            {% if item.evaluated %}<span class="badge bg-success ms-2">Evaluated</span>{% endif %}
+        </div>
+        <div>
+            {% if item.evaluated %}
+            <a href="{{ url_for('reports.course_report', course_id=item.course.id) }}" class="btn btn-sm btn-outline-primary">View</a>
+            {% else %}
+            <a href="{{ url_for('evaluation.evaluate_course', course_id=item.course.id) }}" class="btn btn-sm btn-success">Evaluate</a>
+            {% endif %}
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-warning">No modules found for this selection.</div>
+    {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,158 @@
+/* TPSC Color Scheme */
+:root {
+    --primary-color: #009EDB;
+    --accent-color: #2E3192;
+    --secondary-color: #6c757d;
+    --light-bg: #F8F9FA;
+}
+
+body {
+    background-color: var(--light-bg);
+    font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+}
+
+/* Skip link */
+.skip-link {
+    position: absolute;
+    top: -40px;
+    left: 0;
+    background: #000;
+    color: #fff;
+    padding: 8px;
+    z-index: 100;
+    transition: top 0.2s;
+}
+
+.skip-link:focus {
+    top: 0;
+}
+
+/* Navigation */
+.navbar-brand {
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.bg-primary {
+    background-color: var(--primary-color) !important;
+}
+
+.bg-accent {
+    background-color: var(--accent-color) !important;
+}
+
+.text-accent {
+    color: var(--accent-color) !important;
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.btn-primary:hover {
+    background-color: #0082b3;
+    border-color: #0082b3;
+}
+
+.btn-outline-primary {
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.btn-outline-primary:hover {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+/* Cards */
+.card {
+    border-radius: 10px;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.card:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Top bar */
+.top-bar {
+    font-size: 0.9rem;
+    background-color: #2c3e50 !important;
+}
+
+/* Footer */
+footer {
+    background-color: #2c3e50 !important;
+}
+
+footer a:hover {
+    color: white !important;
+    text-decoration: underline;
+}
+
+/* Flash messages */
+.alert {
+    border-radius: 8px;
+}
+
+/* Handle */
+.handle {
+    cursor: grab;
+}
+
+/* Dropdowns */
+.dropdown-menu {
+    border: none;
+    box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.15);
+}
+
+/* Accessibility Panel */
+.accessibility-panel {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+}
+
+.panel-toggle {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.panel-toggle:hover {
+    background-color: #0082b3;
+}
+
+.panel-content {
+    display: none;
+    position: absolute;
+    bottom: 60px;
+    right: 0;
+    width: 250px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    padding: 15px;
+}
+
+.panel-content h6 {
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+/* Ensure focus is visible */
+*:focus {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+}

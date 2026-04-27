@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block content %}
+<h2><i class="fas fa-book me-2"></i>Modules / Courses</h2>
+<a href="{{ url_for('admin.add_course') }}" class="btn btn-primary mb-3">Add Module</a>
+<table class="table">
+<thead><tr><th>Code</th><th>Name</th><th>Department</th><th>Programme</th><th>Level</th><th>Semester</th><th>Year</th><th>Actions</th></tr></thead>
+<tbody>
+{% for c in courses %}
+<tr>
+<td>{{ c.code }}</td>
+<td>{{ c.name }}</td>
+<td>{{ c.department.name if c.department else '-' }}</td>
+<td>{{ c.programme.name if c.programme else '-' }}</td>
+<td>{{ c.level }}</td>
+<td>{{ c.semester }}</td>
+<td>{{ c.academic_year }}</td>
+<td>
+<a href="{{ url_for('admin.edit_course', course_id=c.id) }}" class="btn btn-sm btn-outline-primary"><i class="fas fa-edit"></i></a>
+<form method="post" action="{{ url_for('admin.delete_course', course_id=c.id) }}" style="display:inline">
+<button class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete?')"><i class="fas fa-trash"></i></button>
+</form>
+</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% endblock %}

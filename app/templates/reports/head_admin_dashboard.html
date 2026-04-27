@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block content %}
+<h2 class="mb-4"><i class="fas fa-tachometer-alt me-2 text-primary"></i>System Usage Reports</h2>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="card text-white bg-primary shadow-sm">
+            <div class="card-body text-center">
+                <h5>Online Users (last 5 min)</h5>
+                <p class="display-6">{{ online_users }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<h4>Evaluations Submitted</h4>
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-body text-center">
+                <h5>Today</h5>
+                <p class="display-6">{{ daily_evals }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-body text-center">
+                <h5>This Week</h5>
+                <p class="display-6">{{ weekly_evals }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-body text-center">
+                <h5>This Month</h5>
+                <p class="display-6">{{ monthly_evals }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<h4>Active Users</h4>
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-body text-center">
+                <h5>Today</h5>
+                <p class="display-6">{{ daily_active_users }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-body text-center">
+                <h5>This Week</h5>
+                <p class="display-6">{{ weekly_active_users }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-body text-center">
+                <h5>This Month</h5>
+                <p class="display-6">{{ monthly_active_users }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

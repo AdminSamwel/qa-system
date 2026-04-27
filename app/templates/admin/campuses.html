@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+<h2 class="mb-4"><i class="fas fa-building me-2 text-primary"></i>Campuses</h2>
+{% if current_user.campus_id is none %}
+<a href="{{ url_for('admin.add_campus') }}" class="btn btn-primary mb-3"><i class="fas fa-plus"></i> Add Campus</a>
+{% endif %}
+<div class="table-responsive shadow-sm">
+    <table class="table table-hover">
+        <thead class="table-primary">
+            <tr><th>Name</th><th>Location</th>{% if current_user.campus_id is none %}<th>Actions</th>{% endif %}</tr>
+        </thead>
+        <tbody>
+            {% for c in campuses %}
+            <tr>
+                <td>{{ c.name }}</td>
+                <td>{{ c.location or '-' }}</td>
+                {% if current_user.campus_id is none %}
+                <td>
+                    <a href="{{ url_for('admin.edit_campus', campus_id=c.id) }}" class="btn btn-sm btn-outline-primary"><i class="fas fa-edit"></i></a>
+                    <form method="post" action="{{ url_for('admin.delete_campus', campus_id=c.id) }}" style="display:inline">
+                        <button class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this campus?')"><i class="fas fa-trash"></i></button>
+                    </form>
+                </td>
+                {% endif %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

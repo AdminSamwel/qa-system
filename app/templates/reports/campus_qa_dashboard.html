@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+<h2 class="mb-4"><i class="fas fa-chart-bar me-2 text-primary"></i>Evaluation Reports – Programmes & Courses</h2>
+
+{% if programme_data %}
+    {% for pd in programme_data %}
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-accent text-white">
+            <h5>{{ pd.programme.name }}</h5>
+        </div>
+        <div class="card-body">
+            <div class="list-group">
+                {% for course in pd.courses %}
+                <a href="{{ url_for('reports.course_report', course_id=course.id) }}"
+                   class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>{{ course.code }} – {{ course.name }}</strong>
+                        <br>
+                        <small class="text-muted">
+                            {{ course.semester }} {{ course.academic_year }} | Level: {{ course.level or 'N/A' }}
+                        </small>
+                    </div>
+                    <span class="badge bg-primary rounded-pill">View</span>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+{% else %}
+    <div class="alert alert-info">No programmes with courses found for this campus.</div>
+{% endif %}
+{% endblock %}

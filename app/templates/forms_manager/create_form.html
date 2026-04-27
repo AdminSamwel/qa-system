@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="fas fa-plus-circle me-2"></i>Create New Evaluation Form</h4>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {{ form.hidden_tag() }}
+                    <div class="mb-3"><label class="form-label">{{ form.title.label }}</label>{{ form.title(class="form-control") }}</div>
+                    <div class="mb-3"><label class="form-label">{{ form.description.label }}</label>{{ form.description(class="form-control", rows="3") }}</div>
+                    <div class="mb-3"><label class="form-label">{{ form.target_level.label }}</label>{{ form.target_level(class="form-select") }}</div>
+                    <div class="d-grid">{{ form.submit(class="btn btn-primary") }}</div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

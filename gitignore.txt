@@ -1,0 +1,24 @@
+# Python virtual environment
+venv/
+env/
+
+# Compiled files
+__pycache__/
+*.py[cod]
+
+# Database
+instance/
+
+# Migrations (if you prefer to regenerate)
+migrations/
+
+# IDE / editor
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment variables
+.env

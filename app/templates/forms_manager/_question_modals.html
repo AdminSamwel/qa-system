@@ -1,0 +1,121 @@
+<div class="modal fade" id="questionModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form id="questionForm">
+                <input type="hidden" id="qSectionId">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">Add / Edit Question</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label>Question Text *</label>
+                        <textarea class="form-control" id="qText" rows="2" required></textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label>Question Type</label>
+                            <select class="form-select" id="qType">
+                                <option value="likert">Likert (1-5)</option>
+                                <option value="text">Open-ended</option>
+                                <option value="multiple_choice">Multiple Choice</option>
+                                <option value="checkbox">Checkboxes</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label>Category (optional)</label>
+                            <input type="text" class="form-control" id="qCategory">
+                        </div>
+                    </div>
+                    <div id="optionsSection" class="mt-2" style="display:none;">
+                        <label>Options (one per line)</label>
+                        <textarea class="form-control" id="qOptions" rows="3"></textarea>
+                    </div>
+                    <div class="form-check mt-2">
+                        <input class="form-check-input" type="checkbox" id="qRequired" checked>
+                        <label class="form-check-label">Required</label>
+                    </div>
+                    <hr>
+                    <h6>Conditional Logic (Show this question if)</h6>
+                    <div class="mb-2">
+                        <label>Parent Question (same section)</label>
+                        <select class="form-select" id="qParentQuestion">
+                            <option value="">-- None --</option>
+                            {% for sdata in section_data %}
+                                {% for q in sdata.questions %}
+                                    {% if q.question_type in ['likert','multiple_choice'] %}
+                                    <option value="{{ q.id }}">[{{ sdata.section.title }}] {{ q.question_text[:40] }}...</option>
+                                    {% endif %}
+                                {% endfor %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-2" id="conditionValueSection" style="display:none;">
+                        <label>Condition Value</label>
+                        <input type="text" class="form-control" id="qConditionValue" placeholder="e.g., 4 or option text">
+                    </div>
+                    <h6>Jump to Section (on matching answer)</h6>
+                    <div class="mb-2">
+                        <label>Go to section</label>
+                        <select class="form-select" id="qGoToSection">
+                            <option value="">-- No jump --</option>
+                            {% for sec in all_sections %}
+                            <option value="{{ sec.id }}">{{ sec.title }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Question</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('questionForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    let sectionId = document.getElementById('qSectionId').value;
+    let editId = this.dataset.editId;
+    let payload = {
+        question_text: document.getElementById('qText').value,
+        question_type: document.getElementById('qType').value,
+        options: document.getElementById('qOptions').value.split('\n').map(o => o.trim()).filter(o => o),
+        required: document.getElementById('qRequired').checked,
+        category: document.getElementById('qCategory').value,
+        parent_question_id: document.getElementById('qParentQuestion').value || null,
+        condition_value: document.getElementById('qConditionValue').value || null,
+        go_to_section_id: document.getElementById('qGoToSection').value || null
+    };
+
+    let url, method;
+    if (editId) {
+        url = '/forms/questions/' + editId + '/update';
+        method = 'POST';
+    } else {
+        url = '/forms/sections/' + sectionId + '/questions/add';
+    }
+
+    fetch(url, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(payload)
+    }).then(r => r.json()).then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error saving question');
+        }
+    });
+});
+
+document.getElementById('qType').addEventListener('change', function() {
+    let t = this.value;
+    document.getElementById('optionsSection').style.display = (t === 'multiple_choice' || t === 'checkbox') ? 'block' : 'none';
+});
+document.getElementById('qParentQuestion').addEventListener('change', function() {
+    document.getElementById('conditionValueSection').style.display = this.value ? 'block' : 'none';
+});
+</script>

@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+<h2><i class="fas fa-graduation-cap me-2"></i>Programmes</h2>
+<a href="{{ url_for('admin.add_programme') }}" class="btn btn-primary mb-3">Add Programme</a>
+<table class="table">
+<thead><tr><th>Name</th><th>Department</th><th>Actions</th></tr></thead>
+<tbody>
+{% for p in programmes %}
+<tr>
+<td>{{ p.name }}</td>
+<td>{{ p.department.name }}</td>
+<td>
+<a href="{{ url_for('admin.edit_programme', prog_id=p.id) }}" class="btn btn-sm btn-outline-primary"><i class="fas fa-edit"></i></a>
+<form method="post" action="{{ url_for('admin.delete_programme', prog_id=p.id) }}" style="display:inline">
+<button class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete?')"><i class="fas fa-trash"></i></button>
+</form>
+</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% endblock %}
