@@ -10,6 +10,8 @@ migrate = Migrate()
 login_manager = LoginManager()
 login_manager.login_view = 'auth.login'
 login_manager.login_message = 'Please log in to access this page.'
+login_manager.login_message_category = 'warning'
+
 
 def create_app(config_class=Config):
     app = Flask(__name__)
@@ -23,7 +25,6 @@ def create_app(config_class=Config):
     def from_json_filter(s):
         return json.loads(s) if s else []
 
-    # Register blueprints
     from app.auth import bp as auth_bp
     app.register_blueprint(auth_bp, url_prefix='/auth')
 
@@ -42,14 +43,13 @@ def create_app(config_class=Config):
     from app.admin import bp as admin_bp
     app.register_blueprint(admin_bp, url_prefix='/admin')
 
-    # --- Update last_active for logged-in users ---
     from flask_login import current_user
-    from datetime import datetime
+    from datetime import datetime, timezone
 
     @app.before_request
     def update_last_active():
         if current_user.is_authenticated:
-            current_user.last_active = datetime.utcnow()
+            current_user.last_active = datetime.now(timezone.utc).replace(tzinfo=None)
             db.session.commit()
 
     return app

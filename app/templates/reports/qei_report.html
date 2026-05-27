@@ -1,0 +1,363 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="mb-0">
+            <i class="fas fa-file-contract me-2 text-primary"></i>
+            NACTVET QEI Report — {{ course.code }}
+        </h2>
+        <small class="text-muted">{{ course.name }} &nbsp;·&nbsp; {{ course.semester }} {{ course.academic_year }}</small>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('reports.download_pdf', course_id=course.id) }}" class="btn btn-sm btn-primary">
+            <i class="fas fa-download me-1"></i><span data-i18n="qei_pdf_btn">PDF</span>
+        </a>
+        <a href="{{ url_for('reports.course_report', course_id=course.id) }}" class="btn btn-sm btn-outline-secondary">
+            <i class="fas fa-chart-bar me-1"></i><span data-i18n="qei_full_report">Full Report</span>
+        </a>
+    </div>
+</div>
+
+{# ── Overall QEI Summary ── #}
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100 text-center">
+            <div class="card-body py-4">
+                <div class="text-muted small mb-1" data-i18n="qei_overall">Overall QEI</div>
+                {% if stats.overall_qei is not none %}
+                <div class="display-4 fw-bold text-{{ stats.qei_colour }}">{{ "%.2f"|format(stats.overall_qei) }}</div>
+                <span class="badge bg-{{ stats.qei_colour }} fs-6 mt-1">{{ stats.qei_label }}</span>
+                {% else %}
+                <div class="display-4 text-muted">—</div>
+                {% endif %}
+                <div class="text-muted small mt-2" data-i18n="qei_formula_note">QEI = Mean / 5.0</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100 text-center">
+            <div class="card-body py-4">
+                <div class="text-muted small mb-1" data-i18n="qei_mean">Mean Score</div>
+                <div class="display-4 fw-bold text-primary">
+                    {% if stats.overall_mean %}{{ "%.2f"|format(stats.overall_mean) }}{% else %}—{% endif %}
+                </div>
+                <div class="text-muted small mt-2" data-i18n="qei_out_of">out of 5.00</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100 text-center">
+            <div class="card-body py-4">
+                <div class="text-muted small mb-1" data-i18n="qei_responses">Responses</div>
+                <div class="display-4 fw-bold text-info">{{ stats.num_responses }}</div>
+                <div class="text-muted small mt-2" data-i18n="qei_submitted">evaluations submitted</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100 text-center">
+            <div class="card-body py-4">
+                <div class="text-muted small mb-1" data-i18n="qei_compliance">NACTVET Compliance</div>
+                {% if stats.nactvet_compliance %}
+                <div class="display-4 fw-bold text-{% if stats.nactvet_compliance.compliance_pct >= 60 %}success{% else %}danger{% endif %}">
+                    {{ stats.nactvet_compliance.compliance_pct }}%
+                </div>
+                <span class="badge bg-{% if stats.nactvet_compliance.status == 'Compliant' %}success{% else %}danger{% endif %} fs-6 mt-1">
+                    {{ stats.nactvet_compliance.status }}
+                </span>
+                {% else %}
+                <div class="display-4 text-muted">—</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ── NACTVET 7 Criteria Compliance Table ── #}
+{% if stats.nactvet_compliance %}
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white fw-semibold">
+        <i class="fas fa-clipboard-check me-2 text-primary"></i>
+        <span data-i18n="qei_criteria_title">NACTVET Assessment Criteria — Section 3.5</span>
+        <span class="float-end text-muted small fw-normal">
+            {{ stats.nactvet_compliance.met }} / {{ stats.nactvet_compliance.total }} <span data-i18n="qei_criteria_met">criteria met</span>
+            &nbsp;|&nbsp; <span data-i18n="qei_thr_label">Threshold: 60%</span>
+        </span>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th data-i18n="th_criterion">Criterion</th>
+                    <th data-i18n="th_naqs_ref">NAQS Reference</th>
+                    <th class="text-center" data-i18n="th_score">QEI Score</th>
+                    <th class="text-center" data-i18n="th_threshold">Threshold</th>
+                    <th class="text-center" data-i18n="th_status">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for key, crit in stats.nactvet_compliance.criteria.items() %}
+            <tr>
+                <td>
+                    <strong>{{ crit.label }}</strong>
+                </td>
+                <td><span class="badge bg-light text-dark border">{{ crit.naqs }}</span></td>
+                <td class="text-center fw-bold text-{{ crit.colour }}">
+                    {% if crit.qei is not none %}{{ "%.2f"|format(crit.qei) }}{% else %}—{% endif %}
+                </td>
+                <td class="text-center text-muted">≥ {{ crit.threshold }}</td>
+                <td class="text-center">
+                    {% if crit.compliant %}
+                    <span class="badge bg-success"><i class="fas fa-check me-1"></i><span data-i18n="badge_acknowledged">Met</span></span>
+                    {% elif crit.qei is none %}
+                    <span class="badge bg-secondary" data-i18n="lbl_no_data">No Data</span>
+                    {% else %}
+                    <span class="badge bg-danger"><i class="fas fa-times me-1"></i><span data-i18n="qei_non_compliant">Not Met</span></span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="card-footer bg-white small text-muted" data-i18n="qei_footnote">
+        QEI = RC / RI &nbsp;(Current Mean ÷ Ideal Score 5.0). Compliance = criterion QEI ≥ threshold (0.60).
+    </div>
+</div>
+{% endif %}
+
+{# ── Section QEI Breakdown ── #}
+{% if stats.sections %}
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white fw-semibold">
+        <i class="fas fa-layer-group me-2 text-primary"></i><span data-i18n="qei_sec_breakdown">Section QEI Breakdown</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>#</th>
+                    <th data-i18n="th_section">Section</th>
+                    <th data-i18n="th_naqs_ref">NAQS Ref.</th>
+                    <th class="text-center" data-i18n="th_mean">Mean</th>
+                    <th class="text-center" data-i18n="th_ideal">Ideal</th>
+                    <th class="text-center" data-i18n="th_qei">QEI</th>
+                    <th class="text-center" data-i18n="th_status">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for sec in stats.sections %}
+            <tr>
+                <td class="text-muted">{{ sec.order }}</td>
+                <td>{{ sec.title }}</td>
+                <td>
+                    {% if sec.naqs_reference %}
+                    <span class="badge bg-light text-dark border">{{ sec.naqs_reference }}</span>
+                    {% else %}<span class="text-muted small">—</span>{% endif %}
+                </td>
+                <td class="text-center">
+                    {% if sec.section_mean %}{{ "%.2f"|format(sec.section_mean) }}{% else %}—{% endif %}
+                </td>
+                <td class="text-center text-muted">{{ sec.ideal_score }}</td>
+                <td class="text-center fw-bold text-{{ sec.qei_colour }}">
+                    {% if sec.section_qei is not none %}{{ "%.2f"|format(sec.section_qei) }}{% else %}—{% endif %}
+                </td>
+                <td class="text-center">
+                    <span class="badge bg-{{ sec.qei_colour }}">{{ sec.qei_label }}</span>
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{# ── Strengths & Weaknesses ── #}
+<div class="row g-3 mb-4">
+    {% if stats.strengths %}
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white fw-semibold text-success">
+                <i class="fas fa-thumbs-up me-2"></i><span data-i18n="qei_strengths">Strengths (Mean ≥ 4.0)</span>
+            </div>
+            <ul class="list-group list-group-flush">
+            {% for q in stats.strengths %}
+                <li class="list-group-item d-flex justify-content-between align-items-start">
+                    <span class="small">{{ q.text[:90] }}{% if q.text|length > 90 %}…{% endif %}</span>
+                    <span class="badge bg-success ms-2">{{ "%.2f"|format(q.mean) }}</span>
+                </li>
+            {% endfor %}
+            </ul>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if stats.weaknesses %}
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white fw-semibold text-danger">
+                <i class="fas fa-exclamation-circle me-2"></i><span data-i18n="qei_weaknesses">Areas Needing Improvement (Mean ≤ 2.5)</span>
+            </div>
+            <ul class="list-group list-group-flush">
+            {% for q in stats.weaknesses %}
+                <li class="list-group-item d-flex justify-content-between align-items-start">
+                    <span class="small">{{ q.text[:90] }}{% if q.text|length > 90 %}…{% endif %}</span>
+                    <span class="badge bg-danger ms-2">{{ "%.2f"|format(q.mean) }}</span>
+                </li>
+            {% endfor %}
+            </ul>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+{# ── Insights ── #}
+{% if stats.insights %}
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white fw-semibold">
+        <i class="fas fa-lightbulb me-2 text-warning"></i><span data-i18n="qei_insights_title">QA Insights</span>
+    </div>
+    <ul class="list-group list-group-flush">
+    {% for insight in stats.insights %}
+        <li class="list-group-item small">{{ insight }}</li>
+    {% endfor %}
+    </ul>
+    {% if stats.prediction %}
+    <div class="card-footer bg-light small text-muted">
+        <i class="fas fa-chart-line me-1"></i><strong data-i18n="qei_prediction_lbl">Prediction:</strong> {{ stats.prediction }}
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+{# ── Mixed Methods Recommendations ── #}
+{% if stats.recommendations %}
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header fw-semibold" style="background:linear-gradient(135deg,#0a1e44 0%,#1565C0 100%);color:#fff;">
+        <i class="fas fa-tasks me-2"></i><span data-i18n="qei_mixed_title">Mixed Methods Analysis &amp; Recommendations</span>
+        <span class="float-end small fw-normal opacity-75">
+            Triangulated: quantitative QEI + qualitative student feedback
+        </span>
+    </div>
+
+    {# Qualitative summary if available #}
+    {% set qa = stats.qualitative_analysis %}
+    {% if qa and qa.has_sufficient_data %}
+    <div class="card-body border-bottom py-3">
+        <div class="row g-3 align-items-center">
+            <div class="col-md-4">
+                <div class="small text-muted mb-1 fw-semibold" data-i18n="qei_voice_sentiment">Student Voice Sentiment</div>
+                <div class="progress" style="height:14px;border-radius:7px;">
+                    <div class="progress-bar bg-success" style="width:{{ qa.sentiment_percentages.positive }}%"
+                         title="Positive {{ qa.sentiment_percentages.positive }}%"></div>
+                    <div class="progress-bar bg-secondary" style="width:{{ qa.sentiment_percentages.neutral }}%"
+                         title="Neutral {{ qa.sentiment_percentages.neutral }}%"></div>
+                    <div class="progress-bar bg-danger" style="width:{{ qa.sentiment_percentages.negative }}%"
+                         title="Constructive {{ qa.sentiment_percentages.negative }}%"></div>
+                </div>
+                <div class="d-flex justify-content-between small text-muted mt-1">
+                    <span>+{{ qa.sentiment_percentages.positive }}% <span data-i18n="cr_pos_lbl">positive</span></span>
+                    <span>{{ qa.sentiment_percentages.negative }}% <span data-i18n="cr_cons_lbl">constructive</span></span>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="small text-muted mb-1 fw-semibold" data-i18n="qei_top_themes">Top Themes Identified</div>
+                {% for theme in qa.themes[:3] %}
+                <span class="badge bg-light text-dark border me-1 mb-1" style="font-size:.75rem;">
+                    <i class="fas {{ theme.icon }} me-1" style="color:#673ab7;"></i>{{ theme.label }} ({{ theme.frequency }}×)
+                </span>
+                {% endfor %}
+            </div>
+            <div class="col-md-4">
+                <div class="small text-muted mb-1 fw-semibold" data-i18n="qei_comments_ana">comments analysed</div>
+                <div class="fw-bold fs-4 text-primary">{{ qa.analysed_comments }}</div>
+                <small class="text-muted" data-i18n="qei_comments_ana">comments analysed</small>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th style="width:90px;" data-i18n="qei_priority_col">Priority</th>
+                    <th data-i18n="qei_area_col">Area of Concern / Strength</th>
+                    <th data-i18n="th_naqs_ref">NAQS Ref.</th>
+                    <th data-i18n="qei_finding_col">Quantitative Finding</th>
+                    <th data-i18n="qei_rec_col">Recommended Action</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for rec in stats.recommendations %}
+            {% set p_colours = {
+                'critical': 'danger',
+                'high':     'warning',
+                'medium':   'info',
+                'positive': 'success'
+            } %}
+            {% set p_col = p_colours.get(rec.priority, 'secondary') %}
+            <tr>
+                <td class="text-center">
+                    <span class="badge bg-{{ p_col }}">
+                        {{ rec.priority | upper }}
+                    </span>
+                    {% if rec.qualitative.triangulated %}
+                    <br><span class="badge bg-primary mt-1" style="font-size:.65rem;">
+                        <i class="fas fa-link me-1"></i><span data-i18n="qei_trig_label">Triangulated</span>
+                    </span>
+                    {% endif %}
+                </td>
+                <td>
+                    <strong>{{ rec.area }}</strong>
+                    {% if rec.qualitative.themes %}
+                    <div class="small text-muted mt-1">
+                        {% for t in rec.qualitative.themes[:2] %}
+                        <i class="fas fa-tag me-1" style="color:#673ab7;font-size:.7rem;"></i>{{ t.label if t.label is defined else t }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if rec.naqs_refs and rec.naqs_refs != 'N/A' %}
+                    <span class="badge bg-light text-dark border small">{{ rec.naqs_refs }}</span>
+                    {% else %}<span class="text-muted">—</span>{% endif %}
+                </td>
+                <td class="small text-{% if rec.quantitative.qei is not none and rec.quantitative.qei < 0.60 %}danger{% elif rec.quantitative.qei is not none and rec.quantitative.qei >= 0.80 %}success{% else %}muted{% endif %}">
+                    {{ rec.quantitative.finding }}
+                </td>
+                <td class="small">{{ rec.action[:120] }}{% if rec.action|length > 120 %}…{% endif %}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="card-footer bg-light small text-muted">
+        <i class="fas fa-info-circle me-1"></i>
+        Priority levels: CRITICAL (QEI &lt; 0.40), HIGH (QEI 0.40–0.60), MEDIUM (qualitative concerns),
+        POSITIVE (sustained strengths). Triangulated = confirmed by both quantitative and qualitative evidence.
+        <a href="{{ url_for('reports.course_report', course_id=course.id) }}" class="ms-2 text-primary" data-i18n="qei_full_link">
+            View full qualitative analysis in Course Report →
+        </a>
+    </div>
+</div>
+{% endif %}
+
+{# ── NAQS Labels Reference ── #}
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white fw-semibold small">
+        <i class="fas fa-info-circle me-2 text-info"></i><span data-i18n="qei_naqs_std">NAQS Standards Reference</span>
+    </div>
+    <div class="card-body">
+        <div class="row row-cols-1 row-cols-md-2 g-2">
+        {% for code, label in naqs_labels.items() %}
+            <div class="col">
+                <span class="badge bg-light text-dark border me-1">{{ code }}</span>
+                <small class="text-muted">{{ label }}</small>
+            </div>
+        {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

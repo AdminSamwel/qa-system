@@ -1,35 +1,224 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2><i class="fas fa-file-alt me-2 text-primary"></i>Manage Evaluation Forms</h2>
-    <a href="{{ url_for('forms_manager.create_form') }}" class="btn btn-primary"><i class="fas fa-plus me-1"></i>Create New Form</a>
+
+<div class="page-header mb-4">
+  <div class="d-flex justify-content-between align-items-start">
+    <div>
+      <h2 class="mb-1"><i class="fas fa-file-alt me-2"></i>Usimamizi wa Fomu za Tathmini</h2>
+      <div class="gold-bar"></div>
+      <p class="mb-0 text-white-50">Simamia templates za NACTVET/TPSC QA na fomu zinazotumika</p>
+    </div>
+    <a href="{{ url_for('forms_manager.create_form') }}" class="btn btn-gold">
+      <i class="fas fa-plus me-1"></i> Fomu Mpya (Tupu)
+    </a>
+  </div>
 </div>
-{% if forms %}
-<div class="table-responsive shadow-sm">
-    <table class="table table-hover align-middle">
-        <thead class="table-primary">
-            <tr><th>Title</th><th>Description</th><th>Target Level</th><th>Status</th><th>Actions</th></tr>
-        </thead>
-        <tbody>
-            {% for f in forms %}
-            <tr>
-                <td>{{ f.title }}</td>
-                <td>{{ f.description or '' }}</td>
-                <td>{{ f.target_level or 'All' }}</td>
-                <td>{% if f.is_active %}<span class="badge bg-success">Active</span>{% else %}<span class="badge bg-secondary">Inactive</span>{% endif %}</td>
-                <td>
-                    <a href="{{ url_for('forms_manager.edit_form', form_id=f.id) }}" class="btn btn-sm btn-outline-primary"><i class="fas fa-edit"></i></a>
-                    <a href="{{ url_for('forms_manager.preview_form', form_id=f.id) }}" class="btn btn-sm btn-outline-secondary"><i class="fas fa-eye"></i></a>
-                    <form method="post" action="{{ url_for('forms_manager.toggle_active', form_id=f.id) }}" class="d-inline">
-                        <button type="submit" class="btn btn-sm btn-outline-warning" onclick="return confirm('Toggle active status?')"><i class="fas fa-power-off"></i></button>
-                    </form>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
+
+<!-- ===== TEMPLATES SECTION ===== -->
+<div class="mb-5">
+  <div class="d-flex align-items-center gap-3 mb-3">
+    <h5 class="mb-0 fw-bold text-navy">
+      <i class="fas fa-layer-group me-2 text-gold"></i>Templates za Kawaida
+    </h5>
+    <span class="badge bg-gold text-navy">Rasmi — Soma Tu</span>
+  </div>
+
+  {% if templates %}
+  <div class="row g-3">
+    {% for t in templates %}
+    <div class="col-md-6">
+      <div class="card template-card h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <div class="template-type-badge
+              {% if t.form_type == 'long_course' %}badge-type-long{% else %}badge-type-short{% endif %}">
+              {% if t.form_type == 'long_course' %}
+                <i class="fas fa-graduation-cap me-1"></i>Mafunzo Marefu
+              {% else %}
+                <i class="fas fa-bolt me-1"></i>Mafunzo Mafupi
+              {% endif %}
+            </div>
+            <span class="badge bg-secondary">
+              <i class="fas fa-lock me-1"></i>Template
+            </span>
+          </div>
+          <h6 class="card-title fw-bold mb-1">{{ t.title }}</h6>
+          <p class="card-text text-muted small mb-3">{{ t.description | truncate(120) }}</p>
+          <div class="d-flex gap-2 flex-wrap small text-muted mb-3">
+            <span><i class="fas fa-layer-group me-1"></i>{{ t.sections | length }} sehemu</span>
+            <span><i class="fas fa-question-circle me-1"></i>
+              {{ t.sections | map(attribute='questions') | map('length') | sum }} maswali
+            </span>
+            <span><i class="fas fa-file-contract me-1"></i>{{ t.policy_ref | truncate(40) }}</span>
+          </div>
+          <div class="d-flex gap-2">
+            <a href="{{ url_for('forms_manager.view_template', form_id=t.id) }}"
+               class="btn btn-sm btn-outline-primary flex-fill">
+              <i class="fas fa-eye me-1"></i>Angalia
+            </a>
+            <a href="{{ url_for('forms_manager.view_template', form_id=t.id) }}#clone-section"
+               class="btn btn-sm btn-primary flex-fill">
+              <i class="fas fa-copy me-1"></i>Nakili &amp; Tumia
+            </a>
+          </div>
+        </div>
+        <div class="template-card-footer">
+          <small class="text-muted">
+            <i class="fas fa-shield-alt me-1 text-success"></i>
+            {{ 'NACTVET 2023' if t.form_type == 'long_course' else 'TPSC QA Policy' }}
+          </small>
+          <small class="text-muted">
+            Nakala zilizoundwa:
+            <strong>{{ t.courses | length if t.courses else 0 }}</strong>
+          </small>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="alert alert-warning">
+    <i class="fas fa-exclamation-triangle me-2"></i>
+    Hakuna templates. Endesha <code>flask seed-templates</code> kwenye terminal.
+  </div>
+  {% endif %}
+</div>
+
+<!-- ===== ACTIVE FORMS SECTION ===== -->
+<div>
+  <div class="d-flex align-items-center gap-3 mb-3">
+    <h5 class="mb-0 fw-bold text-navy">
+      <i class="fas fa-edit me-2 text-primary"></i>Fomu Zinazotumika
+    </h5>
+    <span class="badge bg-primary">{{ forms | length }} fomu</span>
+  </div>
+
+  {% if forms %}
+  <div class="table-responsive shadow-soft rounded-lg">
+    <table class="table table-hover align-middle mb-0">
+      <thead>
+        <tr>
+          <th>Kichwa cha Fomu</th>
+          <th>Mkufunzi</th>
+          <th>Aina</th>
+          <th>Hali</th>
+          <th>Asili</th>
+          <th>Vitendo</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for f in forms %}
+        <tr>
+          <td>
+            <div class="fw-semibold">{{ f.title }}</div>
+            {% if f.description %}
+            <small class="text-muted">{{ f.description | truncate(60) }}</small>
+            {% endif %}
+          </td>
+          <td>
+            {% if f.facilitator_name %}
+              <span class="badge bg-light text-dark border">
+                <i class="fas fa-chalkboard-teacher me-1 text-primary"></i>{{ f.facilitator_name }}
+              </span>
+            {% else %}
+              <span class="text-muted">—</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if f.form_type == 'long_course' %}
+              <span class="badge badge-type-long-sm">Marefu</span>
+            {% elif f.form_type == 'short_course' %}
+              <span class="badge badge-type-short-sm">Mafupi</span>
+            {% else %}
+              <span class="badge bg-secondary">Kawaida</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if f.is_active %}
+              <span class="badge bg-success"><i class="fas fa-check me-1"></i>Hai</span>
+            {% else %}
+              <span class="badge bg-secondary">Imesimamishwa</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if f.cloned_from %}
+              <small class="text-muted"><i class="fas fa-copy me-1"></i>Template #{{ f.cloned_from }}</small>
+            {% else %}
+              <small class="text-muted">—</small>
+            {% endif %}
+          </td>
+          <td>
+            <div class="d-flex gap-1 flex-wrap">
+              <a href="{{ url_for('forms_manager.edit_form', form_id=f.id) }}"
+                 class="btn btn-sm btn-outline-primary" title="Hariri">
+                <i class="fas fa-edit"></i>
+              </a>
+              <a href="{{ url_for('forms_manager.preview_form', form_id=f.id) }}"
+                 class="btn btn-sm btn-outline-secondary" title="Angalia">
+                <i class="fas fa-eye"></i>
+              </a>
+              <a href="{{ url_for('forms_manager.form_settings', form_id=f.id) }}"
+                 class="btn btn-sm btn-outline-dark" title="Mipangilio">
+                <i class="fas fa-cog"></i>
+              </a>
+              <form method="post" action="{{ url_for('forms_manager.toggle_active', form_id=f.id) }}"
+                    class="d-inline" onsubmit="return confirm('Badilisha hali ya fomu hii?')">
+                <button type="submit"
+                  class="btn btn-sm {% if f.is_active %}btn-outline-warning{% else %}btn-outline-success{% endif %}"
+                  title="{{ 'Simamisha' if f.is_active else 'Amsha' }}">
+                  <i class="fas fa-power-off"></i>
+                </button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
     </table>
+  </div>
+  {% else %}
+  <div class="alert alert-info">
+    <i class="fas fa-info-circle me-2"></i>
+    Hakuna fomu bado. <strong>Nakili template</strong> hapo juu ili kuunda fomu ya kwanza,
+    au bonyeza <strong>"Fomu Mpya (Tupu)"</strong> kuunda fomu kutoka mwanzo.
+  </div>
+  {% endif %}
 </div>
-{% else %}
-<div class="alert alert-info">No forms created yet.</div>
-{% endif %}
+
+<style>
+.template-card {
+  border: 2px solid #e0e6f0;
+  border-radius: 14px;
+  transition: border-color .2s, box-shadow .2s;
+}
+.template-card:hover {
+  border-color: var(--navy-mid);
+  box-shadow: 0 6px 22px rgba(21,101,192,.12);
+}
+.template-card-footer {
+  display: flex;
+  justify-content: space-between;
+  padding: .6rem 1.25rem;
+  background: #f8fafc;
+  border-top: 1px solid #e0e6f0;
+  border-radius: 0 0 12px 12px;
+}
+.template-type-badge {
+  font-size: .73rem;
+  font-weight: 700;
+  padding: .3em .75em;
+  border-radius: 20px;
+  letter-spacing: .3px;
+}
+.badge-type-long   { background: #e3f2fd; color: #1565C0; }
+.badge-type-short  { background: #fff8e1; color: #b8860b; }
+.badge-type-long-sm  { background: #e3f2fd; color: #1565C0; font-size: .7rem; }
+.badge-type-short-sm { background: #fff8e1; color: #b8860b; font-size: .7rem; }
+.bg-gold { background: var(--gold) !important; }
+.text-gold { color: var(--gold) !important; }
+.text-navy { color: var(--navy) !important; }
+[data-bs-theme="dark"] .template-card-footer { background: #0d1526; border-color: #1e2d4d; }
+[data-bs-theme="dark"] .badge-type-long  { background: #0d2060; color: #90caf9; }
+[data-bs-theme="dark"] .badge-type-short { background: #3e2723; color: #ffd54f; }
+</style>
 {% endblock %}

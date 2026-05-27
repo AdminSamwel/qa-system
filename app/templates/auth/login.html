@@ -1,32 +1,580 @@
-{% extends "base.html" %}
-{% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-6 col-lg-4">
-        <div class="card shadow-sm border-0">
-            <div class="card-header bg-primary text-white text-center py-3">
-                <h4 class="mb-0"><i class="fas fa-sign-in-alt me-2"></i>Sign In</h4>
-            </div>
-            <div class="card-body p-4">
-                <form method="post">
-                    {{ form.hidden_tag() }}
-                    <div class="mb-3">
-                        <label class="form-label">{{ form.username.label }}</label>
-                        {{ form.username(class="form-control", placeholder="Enter username") }}
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">{{ form.password.label }}</label>
-                        {{ form.password(class="form-control", placeholder="Enter password") }}
-                    </div>
-                    <div class="d-grid">
-                        {{ form.submit(class="btn btn-primary") }}
-                    </div>
-                </form>
-                <hr>
-                <div class="text-center">
-                    <p class="mb-0">Forgot password? Contact the <strong>QA Office</strong>.</p>
-                </div>
-            </div>
+<!DOCTYPE html>
+<html lang="en" id="htmlRoot">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TPSC — Mfumo wa QA</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            background: #eef2f7;
+        }
+
+        /* ══════════════════════════════════════
+           LEFT BRANDING PANEL
+        ══════════════════════════════════════ */
+        .login-left {
+            flex: 0 0 52%;
+            background: linear-gradient(160deg, #0a1e44 0%, #103270 45%, #1565C0 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 52px 44px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Decorative circles */
+        .login-left::before {
+            content: '';
+            position: absolute;
+            width: 520px; height: 520px;
+            border: 60px solid rgba(255,255,255,0.05);
+            border-radius: 50%;
+            top: -200px; left: -200px;
+        }
+        .login-left::after {
+            content: '';
+            position: absolute;
+            width: 380px; height: 380px;
+            border: 40px solid rgba(255,255,255,0.05);
+            border-radius: 50%;
+            bottom: -140px; right: -100px;
+        }
+
+        /* Dot pattern overlay */
+        .dot-pattern {
+            position: absolute;
+            inset: 0;
+            background-image: radial-gradient(rgba(255,255,255,0.07) 1px, transparent 1px);
+            background-size: 28px 28px;
+            pointer-events: none;
+        }
+
+        /* Logo */
+        .logo-ring {
+            position: relative;
+            z-index: 2;
+            width: 160px;
+            height: 160px;
+            border-radius: 50%;
+            background: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.4), 0 0 0 6px rgba(255,255,255,0.15);
+            padding: 10px;
+        }
+
+        .logo-ring img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: 50%;
+        }
+
+        .college-name {
+            position: relative;
+            z-index: 2;
+            color: #fff;
+            font-size: 1.55rem;
+            font-weight: 700;
+            text-align: center;
+            margin-top: 22px;
+            line-height: 1.3;
+            letter-spacing: 0.3px;
+        }
+
+        .college-sw {
+            position: relative;
+            z-index: 2;
+            color: rgba(255,255,255,0.65);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 2.5px;
+            text-align: center;
+            margin-top: 5px;
+            font-weight: 400;
+        }
+
+        .gold-bar {
+            position: relative;
+            z-index: 2;
+            width: 56px;
+            height: 3px;
+            border-radius: 2px;
+            background: linear-gradient(90deg, #f7c948, #e89c00);
+            margin: 18px auto;
+        }
+
+        .tagline {
+            position: relative;
+            z-index: 2;
+            color: rgba(255,255,255,0.82);
+            font-size: 0.97rem;
+            text-align: center;
+            max-width: 360px;
+            line-height: 1.75;
+        }
+
+        /* Feature badges */
+        .feature-list {
+            position: relative;
+            z-index: 2;
+            margin-top: 36px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 100%;
+            max-width: 340px;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 10px;
+            padding: 11px 16px;
+            color: rgba(255,255,255,0.9);
+            font-size: 0.88rem;
+        }
+
+        .feature-item i {
+            color: #f7c948;
+            font-size: 1rem;
+            width: 20px;
+            flex-shrink: 0;
+        }
+
+        /* ══════════════════════════════════════
+           RIGHT FORM PANEL
+        ══════════════════════════════════════ */
+        .login-right {
+            flex: 0 0 48%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 48px 52px;
+            background: #fff;
+            position: relative;
+        }
+
+        /* Language switcher */
+        .lang-bar {
+            position: absolute;
+            top: 22px;
+            right: 24px;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .lang-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 7px 16px;
+            border-radius: 50px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: 2px solid #dce3ee;
+            background: #fff;
+            color: #5a6478;
+            transition: all 0.22s;
+            user-select: none;
+            text-decoration: none;
+        }
+
+        .lang-btn .flag { font-size: 1.15rem; line-height: 1; }
+
+        .lang-btn:hover {
+            border-color: #1565C0;
+            color: #1565C0;
+            background: #eaf0fb;
+        }
+
+        .lang-btn.active {
+            background: #1565C0;
+            border-color: #1565C0;
+            color: #fff;
+            box-shadow: 0 3px 10px rgba(21,101,192,0.35);
+        }
+
+        /* Form wrapper */
+        .form-wrap {
+            width: 100%;
+            max-width: 390px;
+        }
+
+        .form-title {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #0a1e44;
+            line-height: 1.2;
+        }
+
+        .form-subtitle {
+            color: #7a869a;
+            font-size: 0.93rem;
+            margin-top: 6px;
+            margin-bottom: 30px;
+        }
+
+        /* Input fields */
+        .field-group {
+            position: relative;
+            margin-bottom: 18px;
+        }
+
+        .field-group label {
+            display: block;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: #3d4f6b;
+            margin-bottom: 7px;
+            letter-spacing: 0.2px;
+        }
+
+        .field-inner {
+            position: relative;
+        }
+
+        .field-inner .field-icon {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9dafc5;
+            font-size: 0.95rem;
+            pointer-events: none;
+            z-index: 3;
+        }
+
+        .field-inner input {
+            width: 100%;
+            height: 52px;
+            border: 1.8px solid #dce3ee;
+            border-radius: 11px;
+            padding: 0 48px 0 44px;
+            font-size: 0.95rem;
+            color: #1a2b45;
+            background: #f7f9fc;
+            transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+            outline: none;
+            font-family: inherit;
+        }
+
+        .field-inner input:focus {
+            border-color: #1565C0;
+            background: #fff;
+            box-shadow: 0 0 0 3.5px rgba(21,101,192,0.12);
+        }
+
+        .field-inner input::placeholder { color: #b8c4d4; }
+
+        .pw-toggle {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #9dafc5;
+            font-size: 0.95rem;
+            z-index: 4;
+            padding: 4px;
+            border-radius: 4px;
+            transition: color 0.2s;
+        }
+
+        .pw-toggle:hover { color: #1565C0; }
+
+        /* Submit button */
+        .btn-login {
+            width: 100%;
+            height: 54px;
+            background: linear-gradient(135deg, #1565C0 0%, #0a1e44 100%);
+            color: #fff;
+            border: none;
+            border-radius: 11px;
+            font-size: 1rem;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 6px;
+            box-shadow: 0 6px 20px rgba(21,101,192,0.35);
+            font-family: inherit;
+        }
+
+        .btn-login:hover {
+            opacity: 0.93;
+            transform: translateY(-1px);
+            box-shadow: 0 10px 28px rgba(21,101,192,0.45);
+        }
+
+        .btn-login:active { transform: translateY(0); }
+
+        .btn-arrow { transition: transform 0.2s; }
+        .btn-login:hover .btn-arrow { transform: translateX(4px); }
+
+        /* Forgot */
+        .forgot-line {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 0.84rem;
+            color: #8898af;
+        }
+
+        .forgot-line strong { color: #1565C0; }
+
+        /* Flash alerts */
+        .flash-alert {
+            border-radius: 10px;
+            padding: 12px 16px;
+            font-size: 0.88rem;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Footer */
+        .page-footer {
+            position: absolute;
+            bottom: 18px;
+            width: 100%;
+            text-align: center;
+            color: #b0bec5;
+            font-size: 0.76rem;
+        }
+
+        /* ══════════════ RESPONSIVE ══════════════ */
+        @media (max-width: 860px) {
+            body { flex-direction: column; }
+            .login-left {
+                flex: none;
+                padding: 36px 24px;
+                min-height: auto;
+            }
+            .feature-list { display: none; }
+            .login-right {
+                flex: 1;
+                padding: 36px 24px 80px;
+            }
+            .form-wrap { max-width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ══════════════ LEFT PANEL ══════════════ -->
+<div class="login-left">
+    <div class="dot-pattern"></div>
+
+    <div class="logo-ring">
+        <img src="{{ url_for('static', filename='images/tpsc_logo.jpg') }}" alt="TPSC Logo">
+    </div>
+
+    <h2 class="college-name" data-i18n="collegeName">Tanzania Public Service College</h2>
+    <p class="college-sw">Chuo cha Utumishi wa Umma</p>
+    <div class="gold-bar"></div>
+
+    <p class="tagline" data-i18n="tagline">
+        Kuhakikisha ubora wa elimu kupitia tathmini endelevu na uboreshaji katika kampasi zote.
+    </p>
+
+    <div class="feature-list">
+        <div class="feature-item">
+            <i class="fas fa-shield-alt"></i>
+            <span data-i18n="feat1">NACTVET Policy Compliant Evaluations</span>
+        </div>
+        <div class="feature-item">
+            <i class="fas fa-chart-line"></i>
+            <span data-i18n="feat2">Quality Effectiveness Index (QEI) Reports</span>
+        </div>
+        <div class="feature-item">
+            <i class="fas fa-users"></i>
+            <span data-i18n="feat3">Multi-Campus — Students &amp; Public Servants</span>
+        </div>
+        <div class="feature-item">
+            <i class="fas fa-file-contract"></i>
+            <span data-i18n="feat4">Automated NACTVET Compliance Reports</span>
         </div>
     </div>
 </div>
-{% endblock %}
+
+<!-- ══════════════ RIGHT PANEL ══════════════ -->
+<div class="login-right">
+
+    <!-- Language Switcher -->
+    <div class="lang-bar">
+        <button class="lang-btn active" id="btnEn" data-lang-btn="en" onclick="setLang('en')">
+            <span class="flag">🇬🇧</span> English
+        </button>
+        <button class="lang-btn" id="btnSw" data-lang-btn="sw" onclick="setLang('sw')">
+            <span class="flag">🇹🇿</span> Kiswahili
+        </button>
+    </div>
+
+    <div class="form-wrap">
+
+        <!-- Flash messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for cat, msg in messages %}
+            <div class="alert alert-{{ cat }} flash-alert alert-dismissible fade show" role="alert">
+                <i class="fas fa-exclamation-circle"></i>
+                <span>{{ msg }}</span>
+                <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+            </div>
+            {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        <h1 class="form-title" data-i18n="greeting">Karibu Tena</h1>
+        <p class="form-subtitle" data-i18n="subGreeting">Ingia kwenye akaunti yako ya Mfumo wa QA</p>
+
+        <form method="post" autocomplete="on">
+            {{ form.hidden_tag() }}
+
+            <!-- Username -->
+            <div class="field-group">
+                <label for="username" data-i18n="labelUser">Jina la Mtumiaji</label>
+                <div class="field-inner">
+                    <i class="fas fa-user field-icon"></i>
+                    <input type="text" name="username" id="username"
+                           placeholder="username" autocomplete="username"
+                           data-ph-en="Enter username" data-ph-sw="Weka jina la mtumiaji">
+                </div>
+            </div>
+
+            <!-- Password -->
+            <div class="field-group">
+                <label for="password" data-i18n="labelPass">Nywila</label>
+                <div class="field-inner">
+                    <i class="fas fa-lock field-icon"></i>
+                    <input type="password" name="password" id="password"
+                           placeholder="password" autocomplete="current-password"
+                           data-ph-en="Enter password" data-ph-sw="Weka nywila">
+                    <button type="button" class="pw-toggle" onclick="togglePw()">
+                        <i class="fas fa-eye" id="pwIcon"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Submit -->
+            <button type="submit" class="btn-login">
+                <i class="fas fa-sign-in-alt"></i>
+                <span data-i18n="btnLogin">Ingia</span>
+                <i class="fas fa-arrow-right btn-arrow"></i>
+            </button>
+        </form>
+
+        <p class="forgot-line">
+            <i class="fas fa-info-circle me-1"></i>
+            <span data-i18n="forgot">Umesahau nywila? Wasiliana na</span>
+            <strong> <span data-i18n="qaOffice">Ofisi ya QA</span></strong>
+        </p>
+    </div>
+
+    <div class="page-footer">
+        &copy; 2026 Tanzania Public Service College &nbsp;·&nbsp;
+        <span data-i18n="footerTxt">Mfumo wa Udhibiti wa Ubora</span>
+        &nbsp;·&nbsp; NACTVET Compliant
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// ── Translations ──────────────────────────────────────────────────────────────
+const T = {
+    en: {
+        collegeName: 'Tanzania Public Service College',
+        tagline:     'Ensuring quality education through continuous evaluation and improvement across all campuses.',
+        feat1: 'NACTVET Policy Compliant Evaluations',
+        feat2: 'Quality Effectiveness Index (QEI) Reports',
+        feat3: 'Multi-Campus — Students & Public Servants',
+        feat4: 'Automated NACTVET Compliance Reports',
+        greeting:    'Welcome Back',
+        subGreeting: 'Sign in to your QA System account',
+        labelUser:   'Username',
+        labelPass:   'Password',
+        btnLogin:    'Sign In',
+        forgot:      'Forgot password? Contact the',
+        qaOffice:    'QA Office',
+        footerTxt:   'Quality Assurance System',
+    },
+    sw: {
+        collegeName: 'Chuo cha Utumishi wa Umma Tanzania',
+        tagline:     'Kuhakikisha ubora wa elimu kupitia tathmini endelevu na uboreshaji katika kampasi zote.',
+        feat1: 'Tathmini Zinazozingatia Sera ya NACTVET',
+        feat2: 'Ripoti za Kielezo cha Ufanisi wa Ubora (QEI)',
+        feat3: 'Kampasi Nyingi — Wanafunzi & Watumishi wa Umma',
+        feat4: 'Ripoti za Kiotomatiki za Uzingatiaji wa NACTVET',
+        greeting:    'Karibu Tena',
+        subGreeting: 'Ingia kwenye akaunti yako ya Mfumo wa QA',
+        labelUser:   'Jina la Mtumiaji',
+        labelPass:   'Nywila',
+        btnLogin:    'Ingia',
+        forgot:      'Umesahau nywila? Wasiliana na',
+        qaOffice:    'Ofisi ya QA',
+        footerTxt:   'Mfumo wa Udhibiti wa Ubora',
+    }
+};
+
+function setLang(lang) {
+    const t = T[lang];
+    // Update text content
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (t[key]) el.textContent = t[key];
+    });
+    // Update placeholders
+    document.querySelectorAll('[data-ph-en]').forEach(inp => {
+        inp.placeholder = lang === 'sw' ? inp.dataset.phSw : inp.dataset.phEn;
+    });
+    // Toggle buttons
+    document.querySelectorAll('[data-lang-btn]').forEach(function(btn) {
+        btn.classList.toggle('active', btn.getAttribute('data-lang-btn') === lang);
+    });
+    document.getElementById('htmlRoot').lang = lang;
+    localStorage.setItem('qa_lang', lang);
+}
+
+// Restore saved preference
+const saved = localStorage.getItem('qa_lang') || 'sw';
+setLang(saved);
+
+// ── Password visibility ───────────────────────────────────────────────────────
+function togglePw() {
+    const inp  = document.getElementById('password');
+    const icon = document.getElementById('pwIcon');
+    if (inp.type === 'password') {
+        inp.type = 'text';
+        icon.className = 'fas fa-eye-slash';
+    } else {
+        inp.type = 'password';
+        icon.className = 'fas fa-eye';
+    }
+}
+</script>
+</body>
+</html>

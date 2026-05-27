@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Course Evaluation | {{ course.code }} - {{ course.name }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="/static/js/i18n.js"></script>
+    <style>
+        :root {
+            --form-bg: #f0ebf8;
+            --card-bg: #ffffff;
+            --primary-color: #673ab7;
+            --text-color: #202124;
+            --secondary-text: #5f6368;
+            --border-color: #dadce0;
+            --required-star: #d93025;
+            --progress-color: #1a73e8;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--form-bg);
+            font-family: 'Google Sans', 'Roboto', 'Segoe UI', Arial, sans-serif;
+            color: var(--text-color);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .form-header {
+            background: var(--card-bg);
+            border-top: 10px solid var(--primary-color);
+            padding: 24px 24px 20px;
+            margin-bottom: 12px;
+            box-shadow: 0 1px 2px 0 rgba(60,64,67,.3), 0 1px 3px 1px rgba(60,64,67,.15);
+            border-radius: 8px 8px 0 0;
+            max-width: 740px;
+            margin-left: auto;
+            margin-right: auto;
+            margin-top: 20px;
+        }
+
+        .form-title {
+            font-size: 32px;
+            font-weight: 400;
+            line-height: 1.25;
+            color: var(--text-color);
+            margin-bottom: 12px;
+        }
+
+        .form-description {
+            font-size: 14px;
+            color: var(--secondary-text);
+            margin-top: 0;
+        }
+
+        /* Facilitator highlight card */
+        .facilitator-card {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            background: linear-gradient(135deg, #0a1e44 0%, #1565C0 100%);
+            border-radius: 10px;
+            padding: 14px 18px;
+            margin-top: 16px;
+        }
+        .facilitator-icon-wrap {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: rgba(255,255,255,.15);
+            border: 2px solid rgba(255,255,255,.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 1.15rem;
+            flex-shrink: 0;
+        }
+        .facilitator-info {
+            flex: 1;
+        }
+        .facilitator-label {
+            font-size: 11px;
+            color: rgba(255,255,255,.7);
+            text-transform: uppercase;
+            letter-spacing: .8px;
+            font-weight: 600;
+            margin-bottom: 3px;
+        }
+        .facilitator-name {
+            font-size: 18px;
+            font-weight: 700;
+            color: #ffffff;
+            letter-spacing: .2px;
+            line-height: 1.2;
+        }
+
+        .form-container { max-width: 740px; margin: 0 auto 20px; }
+
+        .section-card {
+            background: var(--card-bg);
+            border-radius: 8px;
+            box-shadow: 0 1px 2px 0 rgba(60,64,67,.3), 0 1px 3px 1px rgba(60,64,67,.15);
+            margin-bottom: 12px;
+            padding: 24px;
+            page-break-inside: avoid;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--text-color);
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .question-item {
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .question-item:last-child { border-bottom: none; margin-bottom: 0; }
+
+        .question-text {
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--text-color);
+            margin-bottom: 12px;
+            line-height: 1.5;
+        }
+
+        .required-star { color: var(--required-star); font-weight: 700; margin-left: 2px; }
+
+        /* Scale description box */
+        .scale-info {
+            background: #f8f9fa;
+            border-left: 4px solid var(--primary-color);
+            padding: 10px 16px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            color: var(--secondary-text);
+            line-height: 1.8;
+            max-width: 740px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Likert scale labels */
+        .likert-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 11px;
+            color: var(--secondary-text);
+            padding: 0 5px;
+        }
+        .likert-labels span { text-align: center; flex: 1; min-width: 50px; }
+
+        /* Likert scale buttons */
+        .likert-scale { display: flex; gap: 8px; flex-wrap: wrap; }
+        .likert-option { flex: 1; min-width: 50px; }
+        .likert-option input[type="radio"] { display: none; }
+        .likert-option label {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 5px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: #fff;
+            color: var(--text-color);
+            font-size: 14px;
+            font-weight: 500;
+            user-select: none;
+        }
+        .likert-option label:hover { border-color: var(--primary-color); background: #f3e8fd; }
+        .likert-option input[type="radio"]:checked + label {
+            border-color: var(--primary-color);
+            background: #ede7f6;
+            color: var(--primary-color);
+            font-weight: 700;
+            box-shadow: 0 0 0 2px var(--primary-color);
+        }
+
+        .form-control {
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            padding: 12px 16px;
+            font-size: 14px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            width: 100%;
+            resize: vertical;
+        }
+        .form-control:focus { border-color: var(--primary-color); box-shadow: 0 0 0 2px rgba(103,58,183,0.2); outline: none; }
+
+        .form-check { padding-left: 2em; margin-bottom: 8px; }
+        .form-check-input { width: 20px; height: 20px; border: 2px solid var(--secondary-text); cursor: pointer; accent-color: var(--primary-color); }
+        .form-check-label { font-size: 14px; color: var(--text-color); cursor: pointer; }
+
+        .nav-buttons { max-width: 740px; margin: 0 auto 20px; display: flex; justify-content: space-between; align-items: center; }
+        .btn { padding: 10px 24px; font-size: 14px; font-weight: 500; border-radius: 4px; text-transform: none; letter-spacing: 0.25px; border: none; cursor: pointer; }
+        .btn-primary { background-color: var(--primary-color); color: white; }
+        .btn-primary:hover { background-color: #5e35b1; }
+        .btn-secondary { background-color: transparent; color: var(--primary-color); border: 1px solid var(--border-color); }
+        .btn-secondary:hover { background-color: #f3e8fd; }
+        .btn-success { background-color: #1e8e3e; color: white; }
+        .btn-success:hover { background-color: #188038; }
+
+        .progress-container { max-width: 740px; margin: 0 auto 10px; }
+        .progress { height: 4px; border-radius: 2px; background-color: #e0e0e0; }
+        .progress-bar { background-color: var(--progress-color); transition: width 0.3s ease; }
+
+        .form-footer { max-width: 740px; margin: 0 auto 20px; text-align: center; font-size: 12px; color: var(--secondary-text); }
+
+        /* ── Public form language switcher ── */
+        .pf-lang-bar {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 14px;
+        }
+        .pf-lang-label {
+            font-size: 12px;
+            color: var(--secondary-text);
+            font-weight: 600;
+            margin-right: 4px;
+        }
+        .pf-lang-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 13px;
+            border-radius: 50px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: 1.5px solid #dadce0;
+            background: #fff;
+            color: #5a6478;
+            transition: all 0.2s;
+        }
+        .pf-lang-btn:hover { border-color: var(--primary-color); color: var(--primary-color); }
+        .pf-lang-btn.active {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+            color: #fff;
+        }
+
+        @media (max-width: 768px) {
+            .form-header, .section-card, .nav-buttons { margin-left: 10px; margin-right: 10px; }
+            .likert-scale { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="form-header">
+        <!-- Language Switcher -->
+        <div class="pf-lang-bar">
+            <span class="pf-lang-label" data-i18n="pf_lang_label">Lugha / Language</span>
+            <button class="pf-lang-btn" data-lang-btn="sw" onclick="setLang('sw')">
+                🇹🇿 SW
+            </button>
+            <button class="pf-lang-btn" data-lang-btn="en" onclick="setLang('en')">
+                🇬🇧 EN
+            </button>
+        </div>
+
+        <!-- TPSC Logo row -->
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+            <img src="/static/images/tpsc_logo.jpg" alt="TPSC"
+                 style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid #d0d0d0;"
+                 onerror="this.style.display='none'">
+            <div>
+                <div style="font-size:13px;font-weight:700;color:#5f6368;text-transform:uppercase;letter-spacing:.6px;">
+                    Chuo cha Utumishi wa Umma (TPSC)
+                </div>
+                <div style="font-size:11px;color:#9aa0a6;">Mfumo wa Uhakika wa Ubora — Quality Assurance System</div>
+            </div>
+        </div>
+
+        <h1 class="form-title">{{ form.title }}</h1>
+
+        <!-- Facilitator info card — shows whenever facilitator_name is available -->
+        {% if facilitator_name %}
+        <div class="facilitator-card">
+            <div class="facilitator-icon-wrap">
+                <i class="fas fa-chalkboard-teacher"></i>
+            </div>
+            <div class="facilitator-info">
+                <div class="facilitator-label" data-i18n="pf_evaluating">Mkufunzi / Mwalimu Anayetathminiwa</div>
+                <div class="facilitator-name">{{ facilitator_name }}</div>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="form-description" style="margin-top:14px;">
+            <p>Mheshimiwa Mshiriki,</p>
+            <p>Tunashukuru kwa muda wako. Tafadhali tathmini ubora wa mafunzo ya
+               <strong>{{ course.code }} – {{ course.name }}</strong>
+               {% if facilitator_name %} yaliyofundishwa na <strong>{{ facilitator_name }}</strong>{% endif %}.
+               Majibu yako yatasaidia kuboresha ubora wa mafunzo yetu.
+            </p>
+            <p>Majibu yote ni <strong>ya siri kabisa</strong> na yatatumika kwa madhumuni ya
+               kuboresha ubora peke yake.</p>
+            {% if form.deadline %}
+            <div style="background:#fce8e6;color:#c5221f;padding:4px 12px;border-radius:4px;
+                        font-weight:500;display:inline-block;margin-top:8px;">
+                <i class="fas fa-clock"></i> Mwisho wa Kujibu: {{ form.deadline.strftime('%d %b %Y %H:%M') }}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Rating Scale Information -->
+    <div class="scale-info">
+        <strong data-i18n="pf_scale_title">Kiwango cha Tathmini (Rating Scale):</strong><br>
+        <span data-i18n="pf_scale_1">1 = Sikubaliani Kabisa</span> &nbsp;|&nbsp;
+        <span data-i18n="pf_scale_2">2 = Sikubaliani</span> &nbsp;|&nbsp;
+        <span data-i18n="pf_scale_3">3 = Wastani</span> &nbsp;|&nbsp;
+        <span data-i18n="pf_scale_4">4 = Nakubaliana</span> &nbsp;|&nbsp;
+        <span data-i18n="pf_scale_5">5 = Nakubaliana Kabisa</span>
+    </div>
+
+    <div class="progress-container">
+        <div class="progress">
+            <div class="progress-bar" id="progressBar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+        </div>
+    </div>
+
+    <div class="form-container" id="evaluationForm">
+        {% set sections = form.sections|list|sort(attribute='order') %}
+        {% if sections|length == 0 %}
+            <div class="section-card">
+                <p class="text-muted">No sections available.</p>
+            </div>
+        {% else %}
+            <form method="post" id="evalForm">
+                <!-- Participant Info Section -->
+                <div class="section-card eval-section">
+                    <h2 class="section-title">Participant Information</h2>
+                    <div class="question-item">
+                        <div class="question-text">I am a: <span class="required-star">*</span></div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="participant_type" value="student" id="pt_student" checked required>
+                            <label class="form-check-label" for="pt_student">Student</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="participant_type" value="public_servant" id="pt_public">
+                            <label class="form-check-label" for="pt_public">Public Servant / External Participant</label>
+                        </div>
+                    </div>
+                    <div id="publicServantFields" style="display:none;">
+                        <div class="question-item">
+                            <div class="question-text">Full Name <span style="font-size:12px;color:#5f6368;">(optional)</span></div>
+                            <input type="text" class="form-control" name="participant_name" placeholder="Your full name">
+                        </div>
+                        <div class="question-item">
+                            <div class="question-text">Organisation / Ministry <span style="font-size:12px;color:#5f6368;">(optional)</span></div>
+                            <input type="text" class="form-control" name="participant_org" placeholder="Where you work">
+                        </div>
+                        <div class="question-item" style="border-bottom:none;margin-bottom:0;">
+                            <div class="question-text">Email <span style="font-size:12px;color:#5f6368;">(optional)</span></div>
+                            <input type="email" class="form-control" name="participant_email" placeholder="your@email.go.tz">
+                        </div>
+                    </div>
+                </div>
+
+                {% for section in sections %}
+                <div class="section-card eval-section" {% if not loop.first %}style="display:none;"{% endif %}>
+                    <h2 class="section-title">{{ section.display_title }}</h2>
+                    {% for q in section.questions|sort(attribute='order') %}
+                        <div class="question-item" data-question-id="{{ q.id }}">
+                            <div class="question-text">
+                                {{ q.display_text }}
+                                {% if q.required %}<span class="required-star">*</span>{% endif %}
+                            </div>
+                            {% if q.question_type == 'likert' %}
+                                <div class="likert-labels">
+                                    <span>1<br><span data-i18n="pf_strongly_dis">Strongly<br>Disagree</span></span>
+                                    <span>2<br><span data-i18n="pf_disagree">Disagree</span></span>
+                                    <span>3<br><span data-i18n="pf_neutral">Neutral</span></span>
+                                    <span>4<br><span data-i18n="pf_agree">Agree</span></span>
+                                    <span>5<br><span data-i18n="pf_strongly_agree">Strongly<br>Agree</span></span>
+                                </div>
+                                <div class="likert-scale">
+                                    {% for i in range(1,6) %}
+                                    <div class="likert-option">
+                                        <input class="form-check-input" type="radio" name="q_{{ q.id }}" value="{{ i }}" id="q{{ q.id }}_{{ i }}" {% if q.required %}required{% endif %}>
+                                        <label for="q{{ q.id }}_{{ i }}">{{ i }}</label>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            {% elif q.question_type == 'text' %}
+                                <textarea class="form-control" name="q_{{ q.id }}" rows="3" {% if q.required %}required{% endif %} data-i18n-ph="pf_your_answer" placeholder="Your answer..."></textarea>
+                            {% elif q.question_type == 'multiple_choice' %}
+                                {% for opt in q.options|from_json %}
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="q_{{ q.id }}" value="{{ opt }}" id="q{{ q.id }}_{{ loop.index }}" {% if loop.first and q.required %}required{% endif %}>
+                                    <label class="form-check-label" for="q{{ q.id }}_{{ loop.index }}">{{ opt }}</label>
+                                </div>
+                                {% endfor %}
+                            {% elif q.question_type == 'checkbox' %}
+                                {% for opt in q.options|from_json %}
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="q_{{ q.id }}" value="{{ opt }}" id="q{{ q.id }}_{{ loop.index }}">
+                                    <label class="form-check-label" for="q{{ q.id }}_{{ loop.index }}">{{ opt }}</label>
+                                </div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+                {% endfor %}
+
+                <div class="nav-buttons">
+                    <button type="button" class="btn btn-secondary" id="backBtn" style="visibility:hidden;">
+                        <i class="fas fa-arrow-left me-1"></i> <span data-i18n="pf_prev">Nyuma</span>
+                    </button>
+                    <button type="button" class="btn btn-primary" id="nextBtn">
+                        <span data-i18n="pf_next">Mbele</span> <i class="fas fa-arrow-right ms-1"></i>
+                    </button>
+                    <button type="submit" class="btn btn-success" id="submitBtn" style="display:none;">
+                        <i class="fas fa-paper-plane me-1"></i> <span data-i18n="pf_submit">Wasilisha Tathmini</span>
+                    </button>
+                </div>
+            </form>
+        {% endif %}
+    </div>
+
+    <div class="form-footer">
+        <p data-i18n="pf_anonymous_note">This evaluation is confidential and anonymous.</p>
+    </div>
+
+    <script>
+        // Show/hide public servant fields
+        (function() {
+            const radios = document.querySelectorAll('[name="participant_type"]');
+            const fields = document.getElementById('publicServantFields');
+            radios.forEach(r => r.addEventListener('change', function() {
+                fields.style.display = this.value === 'public_servant' ? 'block' : 'none';
+            }));
+        })();
+
+        (function() {
+            const sections = document.querySelectorAll('.eval-section');
+            const totalSections = sections.length;
+            let currentIndex = 0;
+            const backBtn = document.getElementById('backBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const submitBtn = document.getElementById('submitBtn');
+            const progressBar = document.getElementById('progressBar');
+
+            function updateProgress() {
+                const pct = totalSections > 0 ? Math.round(((currentIndex + 1) / totalSections) * 100) : 0;
+                progressBar.style.width = pct + '%';
+                progressBar.setAttribute('aria-valuenow', pct);
+            }
+
+            function showSection(index) {
+                sections.forEach((sec, i) => { sec.style.display = (i === index) ? 'block' : 'none'; });
+                backBtn.style.visibility = (index > 0) ? 'visible' : 'hidden';
+                if (index < totalSections - 1) {
+                    nextBtn.style.display = 'inline-block';
+                    submitBtn.style.display = 'none';
+                } else {
+                    nextBtn.style.display = 'none';
+                    submitBtn.style.display = 'inline-block';
+                }
+                currentIndex = index;
+                updateProgress();
+                window.scrollTo({top: 0, behavior: 'smooth'});
+            }
+
+            function isSectionValid(section) {
+                let valid = true;
+                section.querySelectorAll('[required]').forEach(input => {
+                    if (input.type === 'radio' || input.type === 'checkbox') {
+                        const name = input.name;
+                        if (!document.querySelector(`[name="${name}"]:checked`)) valid = false;
+                    } else if (input.type === 'textarea') {
+                        if (!input.value.trim()) valid = false;
+                    }
+                });
+                return valid;
+            }
+
+            nextBtn.addEventListener('click', function() {
+                if (!isSectionValid(sections[currentIndex])) {
+                    alert(window.t ? window.t('pf_required', '* Required — Please answer all required questions.') : 'Please answer all required questions before proceeding.');
+                    return;
+                }
+                showSection(currentIndex + 1);
+            });
+
+            backBtn.addEventListener('click', function() {
+                if (currentIndex > 0) showSection(currentIndex - 1);
+            });
+
+            showSection(0);
+
+            // Disable submit button on form submit to prevent double submission
+            document.getElementById('evalForm').addEventListener('submit', function() {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> ' +
+                    (window.t ? window.t('pf_submitting', 'Inawasilisha...') : 'Submitting...');
+            });
+        })();
+    </script>
+</body>
+</html>

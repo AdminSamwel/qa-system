@@ -4,21 +4,110 @@
   <h2>{{ title }}</h2>
   <form method="post">
     {{ form.hidden_tag() }}
+
+    <!-- Code & Name -->
     <div class="row">
-      <div class="col-md-6 mb-3">{{ form.code.label }} {{ form.code(class="form-control") }}</div>
-      <div class="col-md-6 mb-3">{{ form.name.label }} {{ form.name(class="form-control") }}</div>
+      <div class="col-md-6 mb-3">
+        {{ form.code.label(class="form-label") }}
+        {{ form.code(class="form-control", placeholder="e.g., PA101") }}
+        {% for error in form.code.errors %}
+          <div class="text-danger small">{{ error }}</div>
+        {% endfor %}
+      </div>
+      <div class="col-md-6 mb-3">
+        {{ form.name.label(class="form-label") }}
+        {{ form.name(class="form-control", placeholder="e.g., Introduction to Public Admin") }}
+        {% for error in form.name.errors %}
+          <div class="text-danger small">{{ error }}</div>
+        {% endfor %}
+      </div>
     </div>
+
+    <!-- Campus & Course Type -->
     <div class="row">
-      <div class="col-md-6 mb-3">{{ form.department_id.label }} {{ form.department_id(class="form-select") }}</div>
-      <div class="col-md-6 mb-3">{{ form.programme_id.label }} {{ form.programme_id(class="form-select") }}</div>
+      <div class="col-md-6 mb-3">
+        {{ form.campus_id.label(class="form-label") }}
+        {{ form.campus_id(class="form-select") }}
+        {% for error in form.campus_id.errors %}
+          <div class="text-danger small">{{ error }}</div>
+        {% endfor %}
+      </div>
+      <div class="col-md-6 mb-3">
+        {{ form.course_type.label(class="form-label") }}
+        {{ form.course_type(class="form-select") }}
+        {% for error in form.course_type.errors %}
+          <div class="text-danger small">{{ error }}</div>
+        {% endfor %}
+      </div>
     </div>
+
+    <!-- Department & Programme -->
     <div class="row">
-      <div class="col-md-4 mb-3">{{ form.level.label }} {{ form.level(class="form-select") }}</div>
-      <div class="col-md-4 mb-3">{{ form.semester.label }} {{ form.semester(class="form-select") }}</div>
-      <div class="col-md-4 mb-3">{{ form.academic_year.label }} {{ form.academic_year(class="form-control") }}</div>
+      <div class="col-md-6 mb-3">
+        {{ form.department_id.label(class="form-label") }}
+        {{ form.department_id(class="form-select") }}
+        {% for error in form.department_id.errors %}
+          <div class="text-danger small">{{ error }}</div>
+        {% endfor %}
+      </div>
+      <div class="col-md-6 mb-3">
+        {{ form.programme_id.label(class="form-label") }}
+        {{ form.programme_id(class="form-select") }}
+        {% for error in form.programme_id.errors %}
+          <div class="text-danger small">{{ error }}</div>
+        {% endfor %}
+      </div>
     </div>
-    <div class="mb-3">{{ form.lecturer_id.label }} {{ form.lecturer_id(class="form-select") }}</div>
+
+    <!-- Level, Semester, Academic Year -->
+    <div class="row">
+      <div class="col-md-4 mb-3">
+        {{ form.level.label(class="form-label") }}
+        {{ form.level(class="form-select") }}
+        {% for error in form.level.errors %}
+          <div class="text-danger small">{{ error }}</div>
+        {% endfor %}
+      </div>
+      <div class="col-md-4 mb-3">
+        {{ form.semester.label(class="form-label") }}
+        {{ form.semester(class="form-select") }}
+        {% for error in form.semester.errors %}
+          <div class="text-danger small">{{ error }}</div>
+        {% endfor %}
+      </div>
+      <div class="col-md-4 mb-3">
+        {{ form.academic_year.label(class="form-label") }}
+        {{ form.academic_year(class="form-control", placeholder="e.g., 2025/2026") }}
+        {% for error in form.academic_year.errors %}
+          <div class="text-danger small">{{ error }}</div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Lecturer & Evaluation Form -->
+    <div class="row">
+      <div class="col-md-6 mb-3">
+        {{ form.lecturer_id.label(class="form-label") }}
+        {{ form.lecturer_id(class="form-select") }}
+        {% for error in form.lecturer_id.errors %}
+          <div class="text-danger small">{{ error }}</div>
+        {% endfor %}
+        {% if form.lecturer_id.choices|length == 0 %}
+          <div class="text-warning small">No lecturers found in this campus. Add one first.</div>
+        {% endif %}
+      </div>
+      <div class="col-md-6 mb-3">
+        {{ form.form_id.label(class="form-label") }}
+        {{ form.form_id(class="form-select") }}
+        <div class="text-muted small">Select the evaluation form to use for this course. Leave empty to use the default active form.</div>
+        {% for error in form.form_id.errors %}
+          <div class="text-danger small">{{ error }}</div>
+        {% endfor %}
+      </div>
+    </div>
+
     <button type="submit" class="btn btn-primary">Save</button>
+    <a href="{{ url_for('admin.list_courses') }}" class="btn btn-secondary">Cancel</a>
   </form>
 </div>
 {% endblock %}

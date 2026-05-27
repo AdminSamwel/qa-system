@@ -1,27 +1,144 @@
 {% extends "base.html" %}
 {% block content %}
-<h2><i class="fas fa-book me-2"></i>Modules / Courses</h2>
+<h2 class="mb-4"><i class="fas fa-book me-2 text-primary"></i>Modules / Courses</h2>
+{% if current_user.role == 'admin' %}
 <a href="{{ url_for('admin.add_course') }}" class="btn btn-primary mb-3">Add Module</a>
-<table class="table">
-<thead><tr><th>Code</th><th>Name</th><th>Department</th><th>Programme</th><th>Level</th><th>Semester</th><th>Year</th><th>Actions</th></tr></thead>
-<tbody>
-{% for c in courses %}
-<tr>
-<td>{{ c.code }}</td>
-<td>{{ c.name }}</td>
-<td>{{ c.department.name if c.department else '-' }}</td>
-<td>{{ c.programme.name if c.programme else '-' }}</td>
-<td>{{ c.level }}</td>
-<td>{{ c.semester }}</td>
-<td>{{ c.academic_year }}</td>
-<td>
-<a href="{{ url_for('admin.edit_course', course_id=c.id) }}" class="btn btn-sm btn-outline-primary"><i class="fas fa-edit"></i></a>
-<form method="post" action="{{ url_for('admin.delete_course', course_id=c.id) }}" style="display:inline">
-<button class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete?')"><i class="fas fa-trash"></i></button>
-</form>
-</td>
-</tr>
-{% endfor %}
-</tbody>
-</table>
+{% endif %}
+<div class="table-responsive shadow-sm">
+    <table class="table table-hover">
+        <thead class="table-primary">
+            <tr>
+                <th>Code</th>
+                <th>Name</th>
+                <th>Campus</th>
+                <th>Programme</th>
+                <th>Type</th>
+                <th>Level</th>
+                <th>Semester</th>
+                <th>Year</th>
+                {% if current_user.role in ['admin', 'qa_officer'] %}
+                <th>Public Link (short courses)</th>
+                {% endif %}
+                {% if current_user.role == 'admin' %}
+                <th>Actions</th>
+                {% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for c in courses %}
+            <tr>
+                <td>{{ c.code }}</td>
+                <td>{{ c.name }}</td>
+                <td>{{ c.campus.name if c.campus else '-' }}</td>
+                <td>{{ c.programme.name if c.programme else '-' }}</td>
+                <td>{{ c.course_type }}</td>
+                <td>{{ c.level or '-' }}</td>
+                <td>{{ c.semester or '-' }}</td>
+                <td>{{ c.academic_year or '-' }}</td>
+                {% if current_user.role in ['admin', 'qa_officer'] %}
+                <td>
+                    {% if c.course_type == 'short' and c.public_token %}
+                    {% set public_url = url_for('evaluation.public_evaluate', course_id=c.id, token=c.public_token, _external=True) %}
+                    <button type="button" class="btn btn-sm btn-outline-primary share-btn"
+                            data-url="{{ public_url }}"
+                            data-course-code="{{ c.code }}"
+                            data-course-name="{{ c.name }}"
+                            title="Share evaluation link">
+                        <i class="fas fa-share-alt"></i> Share
+                    </button>
+                    {% else %}
+                    <span class="text-muted">N/A</span>
+                    {% endif %}
+                </td>
+                {% endif %}
+                {% if current_user.role == 'admin' %}
+                <td>
+                    <a href="{{ url_for('admin.edit_course', course_id=c.id) }}" class="btn btn-sm btn-outline-primary"><i class="fas fa-edit"></i></a>
+                    <form method="post" action="{{ url_for('admin.delete_course', course_id=c.id) }}" style="display:inline">
+                        <button class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete?')"><i class="fas fa-trash"></i></button>
+                    </form>
+                </td>
+                {% endif %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Share Modal -->
+<div class="modal fade" id="shareModal" tabindex="-1" aria-labelledby="shareModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="shareModalLabel"><i class="fas fa-share-alt me-2"></i>Share Evaluation Link</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p><strong id="modalCourseName"></strong></p>
+                <div class="mb-3">
+                    <label class="form-label fw-bold"><i class="fas fa-link me-1"></i>Copy Link</label>
+                    <div class="input-group input-group-sm">
+                        <input type="text" class="form-control" id="shareUrl" readonly>
+                        <button class="btn btn-outline-secondary" id="copyBtn" type="button"><i class="fas fa-copy"></i> Copy</button>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold"><i class="fas fa-code me-1"></i>Embed Code</label>
+                    <textarea class="form-control form-control-sm" id="embedCode" rows="3" readonly></textarea>
+                </div>
+                <div class="d-grid gap-2">
+                    <a href="#" class="btn btn-success" id="whatsappBtn" target="_blank" rel="noopener">
+                        <i class="fab fa-whatsapp me-2"></i>Share via WhatsApp
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Debug: Log when script runs
+console.log('Share modal script loaded at ' + new Date().toISOString());
+
+// Wait for DOM to be ready, then attach
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOMContentLoaded fired.');
+    console.log('Share buttons found: ' + document.querySelectorAll('.share-btn').length);
+
+    var shareModal = new bootstrap.Modal(document.getElementById('shareModal'));
+    var shareUrlInput = document.getElementById('shareUrl');
+    var embedCodeArea = document.getElementById('embedCode');
+    var whatsappBtn = document.getElementById('whatsappBtn');
+    var modalCourseName = document.getElementById('modalCourseName');
+    var copyBtn = document.getElementById('copyBtn');
+
+    document.querySelectorAll('.share-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            console.log('Share button clicked.');
+            var url = this.getAttribute('data-url');
+            var courseName = this.getAttribute('data-course-name');
+            var courseCode = this.getAttribute('data-course-code');
+
+            console.log('URL:', url);
+            shareUrlInput.value = url;
+            embedCodeArea.value = '<iframe src="' + url + '" width="100%" height="600" frameborder="0"></iframe>';
+            whatsappBtn.href = 'https://wa.me/?text=' + encodeURIComponent('Tafadhali jaza tathmini ya kozi ' + courseCode + ' - ' + courseName + ':\n' + url);
+            modalCourseName.textContent = courseCode + ' - ' + courseName;
+            shareModal.show();
+        });
+    });
+
+    copyBtn.addEventListener('click', function() {
+        shareUrlInput.select();
+        document.execCommand('copy');
+        alert('Link copied to clipboard!');
+    });
+
+    document.getElementById('shareModal').addEventListener('hidden.bs.modal', function () {
+        shareUrlInput.value = '';
+        embedCodeArea.value = '';
+        whatsappBtn.href = '#';
+    });
+});
+</script>
 {% endblock %}

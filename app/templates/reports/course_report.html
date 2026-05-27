@@ -1,157 +1,605 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="card shadow-sm border-0 mb-4">
-    <div class="card-header bg-primary text-white">
-        <h4 class="mb-0"><i class="fas fa-file-alt me-2"></i>Report: {{ course.code }} - {{ course.name }}</h4>
-    </div>
-    <div class="card-body">
-        <p><strong>Semester:</strong> {{ course.semester }} {{ course.academic_year }} |
-           <strong>Responses:</strong> {{ stats.num_responses }}</p>
-        <p><strong>Lecturer:</strong> {{ stats.lecturer }}</p>
-    </div>
-</div>
+<style>
+    :root {
+        --gf-purple: #673ab7;
+        --gf-text: #202124;
+        --gf-secondary: #5f6368;
+        --gf-border: #dadce0;
+        --gf-bg: #f0ebf8;
+        --gf-white: #ffffff;
+    }
 
-<!-- Summary Cards -->
-<div class="row g-4 mb-4">
-    <div class="col-md-4">
-        <div class="card text-white bg-primary shadow-sm">
-            <div class="card-body text-center">
-                <h5>Course Mean</h5>
-                <p class="display-6">{{ "%.2f"|format(stats.overall_mean) if stats.overall_mean else 'N/A' }} / 5.0</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card text-white bg-accent shadow-sm">
-            <div class="card-body text-center">
-                <h5>College Mean</h5>
-                <p class="display-6">{{ "%.2f"|format(stats.college_mean) if stats.college_mean is defined and stats.college_mean is not none else 'N/A' }}</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card text-white bg-secondary shadow-sm">
-            <div class="card-body text-center">
-                <h5>Responses</h5>
-                <p class="display-6">{{ stats.num_responses }}</p>
-            </div>
-        </div>
-    </div>
-</div>
+    body {
+        background-color: var(--gf-bg);
+        font-family: 'Google Sans', 'Roboto', 'Segoe UI', Arial, sans-serif;
+    }
 
-<!-- Insights and Prediction -->
-<div class="row mb-4">
-    <div class="col-md-6">
-        <div class="card shadow-sm">
-            <div class="card-header bg-info text-white"><h5 class="mb-0"><i class="fas fa-lightbulb me-2"></i>Key Insights</h5></div>
-            <div class="card-body">
-                <ul class="list-group list-group-flush">
-                    {% for ins in insights %}
-                    <li class="list-group-item">{{ ins }}</li>
-                    {% endfor %}
-                </ul>
-            </div>
+    .gf-container {
+        max-width: 750px;
+        margin: 0 auto;
+        padding: 24px 16px;
+    }
+
+    /* Header */
+    .gf-header {
+        background: var(--gf-white);
+        border-top: 10px solid var(--gf-purple);
+        border-radius: 8px;
+        box-shadow: 0 1px 2px rgba(0,0,0,.1), 0 1px 4px rgba(0,0,0,.08);
+        padding: 24px;
+        margin-bottom: 24px;
+    }
+    .gf-header h1 {
+        font-size: 24px;
+        font-weight: 400;
+        color: var(--gf-text);
+        margin: 0 0 8px;
+    }
+    .gf-header .subtitle {
+        font-size: 14px;
+        color: var(--gf-secondary);
+    }
+
+    /* Summary cards */
+    .gf-summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 12px;
+        margin-bottom: 24px;
+    }
+    .gf-summary-card {
+        background: var(--gf-white);
+        border-radius: 8px;
+        box-shadow: 0 1px 2px rgba(0,0,0,.1), 0 1px 4px rgba(0,0,0,.08);
+        padding: 20px;
+        text-align: center;
+    }
+    .gf-summary-card .label {
+        font-size: 13px;
+        color: var(--gf-secondary);
+        margin-bottom: 8px;
+    }
+    .gf-summary-card .value {
+        font-size: 28px;
+        font-weight: 400;
+        color: var(--gf-purple);
+    }
+
+    /* Section title */
+    .gf-section-title {
+        font-size: 18px;
+        font-weight: 500;
+        color: var(--gf-text);
+        margin: 28px 0 16px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid var(--gf-border);
+    }
+
+    /* Single column question cards */
+    .gf-cards-list {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+
+    /* Individual question card */
+    .gf-card {
+        background: var(--gf-white);
+        border-radius: 8px;
+        box-shadow: 0 1px 2px rgba(0,0,0,.1), 0 1px 4px rgba(0,0,0,.08);
+        overflow: hidden;
+    }
+    .gf-card-header {
+        padding: 20px 24px 0;
+    }
+    .gf-card-title {
+        font-size: 15px;
+        font-weight: 500;
+        color: var(--gf-text);
+        line-height: 1.5;
+    }
+    .gf-card-count {
+        font-size: 13px;
+        color: var(--gf-secondary);
+        margin: 6px 0 16px;
+    }
+    .gf-card-body {
+        padding: 0 16px 16px;
+    }
+
+    /* Text response cards */
+    .gf-text-card {
+        padding: 20px 24px;
+    }
+    .gf-text-title {
+        font-size: 15px;
+        font-weight: 500;
+        color: var(--gf-text);
+        margin-bottom: 6px;
+    }
+    .gf-text-count {
+        font-size: 13px;
+        color: var(--gf-secondary);
+        margin-bottom: 16px;
+    }
+    .gf-text-list {
+        max-height: 320px;
+        overflow-y: auto;
+    }
+    .gf-text-item {
+        background: #f8f9fa;
+        border-radius: 6px;
+        padding: 12px 16px;
+        margin-bottom: 8px;
+        font-size: 13px;
+        color: var(--gf-text);
+        font-style: italic;
+        line-height: 1.5;
+    }
+    .gf-text-empty, .gf-text-more {
+        font-style: normal;
+        color: var(--gf-secondary);
+        font-size: 13px;
+        padding: 8px;
+    }
+    .gf-text-more { color: var(--gf-purple); font-weight: 500; }
+
+    /* Export buttons */
+    .gf-export {
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-top: 24px;
+    }
+    .gf-btn {
+        padding: 10px 20px;
+        border-radius: 4px;
+        text-decoration: none;
+        color: white;
+        font-size: 14px;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .gf-btn-csv { background: #1e8e3e; }
+    .gf-btn-excel { background: #217346; }
+    .gf-btn-pdf { background: var(--gf-purple); }
+
+    @media (max-width: 600px) {
+        .gf-container { padding: 12px 8px; }
+        .gf-card-header { padding: 16px 16px 0; }
+        .gf-card-body { padding: 0 8px 8px; }
+    }
+</style>
+
+<div class="gf-container">
+    <!-- Header -->
+    <div class="gf-header">
+        <h1>{{ course.code }} – {{ course.name }}</h1>
+        <div class="subtitle">
+            {{ course.semester }} {{ course.academic_year }} &nbsp;·&nbsp; 
+            {{ stats.num_responses }} response{{ 's' if stats.num_responses != 1 else '' }}
         </div>
     </div>
-    <div class="col-md-6">
-        <div class="card shadow-sm border-warning">
-            <div class="card-header bg-warning text-dark"><h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>Prediction</h5></div>
-            <div class="card-body">
-                <p>{{ prediction }}</p>
-            </div>
+
+    <!-- Summary -->
+    <div class="gf-summary">
+        <div class="gf-summary-card">
+            <div class="label" data-i18n="cr_avg_score">Average Score</div>
+            <div class="value">{{ "%.1f"|format(stats.overall_mean) if stats.overall_mean else '–' }}</div>
+            <div style="font-size:12px;color:var(--gf-secondary);" data-i18n="cr_out_of_5">out of 5</div>
         </div>
-    </div>
-</div>
-
-<!-- Charts -->
-<div class="row g-4 mb-4">
-    {% if charts.section_bar %}
-    <div class="col-md-6">
-        <div class="card shadow-sm"><div class="card-body">{{ charts.section_bar|safe }}</div></div>
-    </div>
-    {% endif %}
-    {% if charts.radar %}
-    <div class="col-md-6">
-        <div class="card shadow-sm"><div class="card-body">{{ charts.radar|safe }}</div></div>
-    </div>
-    {% endif %}
-    {% if charts.pie %}
-    <div class="col-md-6">
-        <div class="card shadow-sm"><div class="card-body">{{ charts.pie|safe }}</div></div>
-    </div>
-    {% endif %}
-</div>
-
-<!-- Frequency Distribution Tables -->
-{% if stats.sections %}
-<div class="card shadow-sm mb-4">
-    <div class="card-header bg-secondary text-white">
-        <h5 class="mb-0"><i class="fas fa-table me-2"></i>Frequency Distribution (Likert Questions)</h5>
-    </div>
-    <div class="card-body">
-        {% for sec in stats.sections %}
-            {% if sec.likert_questions %}
-            <h6 class="text-accent">{{ sec.title }}</h6>
-            <div class="table-responsive mb-3">
-                <table class="table table-bordered table-sm">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Question</th>
-                            <th>Mean</th>
-                            <th>1</th>
-                            <th>2</th>
-                            <th>3</th>
-                            <th>4</th>
-                            <th>5</th>
-                            <th>Total</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for q in sec.likert_questions %}
-                        <tr>
-                            <td>{{ q.text[:60] }}{% if q.text|length > 60 %}...{% endif %}</td>
-                            <td>{{ "%.2f"|format(q.mean) if q.mean is not none else '-' }}</td>
-                            <td>{{ q.frequency.get(1, 0) }}</td>
-                            <td>{{ q.frequency.get(2, 0) }}</td>
-                            <td>{{ q.frequency.get(3, 0) }}</td>
-                            <td>{{ q.frequency.get(4, 0) }}</td>
-                            <td>{{ q.frequency.get(5, 0) }}</td>
-                            <td>{{ q.count }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+        <div class="gf-summary-card">
+            <div class="label" data-i18n="cr_qei_score">QEI Score</div>
+            {% if stats.overall_qei is not none %}
+            <div class="value" style="color:{% if stats.qei_colour == 'success' %}#1e8e3e{% elif stats.qei_colour == 'danger' %}#d93025{% elif stats.qei_colour == 'warning' %}#f57c00{% else %}#009EDB{% endif %};">
+                {{ "%.2f"|format(stats.overall_qei) }}
             </div>
+            <div style="font-size:12px;color:var(--gf-secondary);">{{ stats.qei_label }}</div>
+            {% else %}
+            <div class="value" style="color:var(--gf-secondary);">–</div>
             {% endif %}
-        {% endfor %}
+        </div>
+        <div class="gf-summary-card">
+            <div class="label" data-i18n="cr_total_responses">Total Responses</div>
+            <div class="value">{{ stats.num_responses }}</div>
+        </div>
+        <div class="gf-summary-card">
+            <div class="label" data-i18n="cr_lecturer">Lecturer</div>
+            <div style="font-size:15px;color:var(--gf-text);font-weight:500;">{{ stats.lecturer }}</div>
+        </div>
     </div>
-</div>
-{% endif %}
 
-<!-- Student Comments -->
-{% if stats.sections %}
-<div class="card shadow-sm mt-4">
-    <div class="card-header bg-secondary text-white"><h5 class="mb-0"><i class="fas fa-comments me-2"></i>Student Comments</h5></div>
-    <div class="card-body">
-        {% for sec in stats.sections %}
-            {% if sec.text_questions %}
-            <h6>{{ sec.title }}</h6>
-            {% for tq in sec.text_questions %}
-                <p><strong>{{ tq.text }}</strong></p>
-                <ul>
-                    {% for comment in tq.comments[:5] %}
-                    <li>{{ comment }}</li>
-                    {% endfor %}
-                </ul>
+    <!-- NACTVET Compliance Badge -->
+    {% if stats.nactvet_compliance %}
+    <div style="background:#fff;border-radius:8px;box-shadow:0 1px 2px rgba(0,0,0,.1);padding:16px 24px;margin-bottom:24px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+        <strong style="font-size:14px;" data-i18n="cr_nactvet_badge">NACTVET Compliance:</strong>
+        <span style="font-size:22px;font-weight:700;color:{% if stats.nactvet_compliance.status == 'Compliant' %}#1e8e3e{% else %}#d93025{% endif %};">
+            {{ stats.nactvet_compliance.compliance_pct }}%
+        </span>
+        <span style="font-size:13px;color:#5f6368;">
+            ({{ stats.nactvet_compliance.met }}/{{ stats.nactvet_compliance.total }} <span data-i18n="cr_criteria_met">criteria met</span>)
+        </span>
+        <a href="{{ url_for('reports.qei_report', course_id=course.id) }}"
+           style="margin-left:auto;font-size:13px;color:var(--gf-purple);text-decoration:none;font-weight:500;"
+           data-i18n="cr_full_nactvet">
+            Full NACTVET Report →
+        </a>
+    </div>
+    {% endif %}
+
+    <!-- Overall pie chart -->
+    {% if overall_pie %}
+    <div class="gf-card" style="margin-bottom:24px;">
+        <div class="gf-card-body" style="padding:20px;">{{ overall_pie|safe }}</div>
+    </div>
+    {% endif %}
+
+    <!-- Per‑question cards (single column) -->
+    {% if question_cards %}
+        {% set ns = namespace(current_section='') %}
+        {% for qc in question_cards %}
+            {% if qc.section_title != ns.current_section %}
+                {% set ns.current_section = qc.section_title %}
+                <div class="gf-section-title">{{ ns.current_section }}</div>
+            {% endif %}
+            
+            <div class="gf-cards-list">
+                <div class="gf-card">
+                    <div class="gf-card-header">
+                        <div class="gf-card-title">{{ qc.question_text }}</div>
+                        <div class="gf-card-count">{{ qc.count }} response{{ 's' if qc.count != 1 else '' }}</div>
+                    </div>
+                    <div class="gf-card-body">
+                        {% if qc.question_type == 'likert' %}
+                            {{ qc.chart_html|safe }}
+                        {% elif qc.question_type == 'text' %}
+                            {{ qc.card_html|safe }}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         QUALITATIVE ANALYSIS — Student Voice
+         ═══════════════════════════════════════════════════════════════ -->
+    {% set qa = stats.qualitative_analysis %}
+    {% if qa and qa.analysed_comments > 0 %}
+    <div class="gf-section-title" style="margin-top:32px;">
+        <i class="fas fa-comment-alt me-2" style="color:var(--gf-purple);"></i>
+        <span data-i18n="cr_qual_title">Qualitative Analysis — Student Voice</span>
+    </div>
+
+    <!-- Sentiment distribution card -->
+    <div class="gf-card" style="margin-bottom:16px;">
+        <div style="padding:20px 24px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
+                <div>
+                    <div style="font-size:15px;font-weight:500;color:#202124;" data-i18n="cr_sentiment_title">Sentiment Distribution</div>
+                    <div style="font-size:13px;color:#5f6368;">
+                        {{ qa.analysed_comments }} <span data-i18n="cr_responses_ana">open-ended responses analysed</span>
+                    </div>
+                </div>
+                <div style="display:flex;gap:16px;font-size:13px;">
+                    <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#1e8e3e;margin-right:4px;"></span><span data-i18n="cr_pos_label">Positive</span> {{ qa.sentiment_percentages.positive }}%</span>
+                    <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#5f6368;margin-right:4px;"></span><span data-i18n="cr_neu_label">Neutral</span> {{ qa.sentiment_percentages.neutral }}%</span>
+                    <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#d93025;margin-right:4px;"></span><span data-i18n="cr_cons_label">Constructive</span> {{ qa.sentiment_percentages.negative }}%</span>
+                </div>
+            </div>
+            <!-- Stacked bar -->
+            <div style="height:20px;border-radius:10px;overflow:hidden;display:flex;background:#f0ebf8;">
+                {% if qa.sentiment_percentages.positive > 0 %}
+                <div style="width:{{ qa.sentiment_percentages.positive }}%;background:#1e8e3e;transition:width .5s;" title="Positive {{ qa.sentiment_percentages.positive }}%"></div>
+                {% endif %}
+                {% if qa.sentiment_percentages.neutral > 0 %}
+                <div style="width:{{ qa.sentiment_percentages.neutral }}%;background:#9aa0a6;transition:width .5s;" title="Neutral {{ qa.sentiment_percentages.neutral }}%"></div>
+                {% endif %}
+                {% if qa.sentiment_percentages.negative > 0 %}
+                <div style="width:{{ qa.sentiment_percentages.negative }}%;background:#d93025;transition:width .5s;" title="Constructive {{ qa.sentiment_percentages.negative }}%"></div>
+                {% endif %}
+            </div>
+            <!-- Summary narrative -->
+            <p style="font-size:13px;color:#5f6368;margin-top:14px;line-height:1.6;margin-bottom:0;">
+                {{ qa.summary }}
+            </p>
+        </div>
+    </div>
+
+    <!-- Themes grid -->
+    {% if qa.themes %}
+    <div class="gf-card" style="margin-bottom:16px;">
+        <div style="padding:20px 24px 8px;">
+            <div style="font-size:15px;font-weight:500;color:#202124;margin-bottom:4px;" data-i18n="cr_themes_title">Identified Themes</div>
+            <div style="font-size:13px;color:#5f6368;margin-bottom:16px;" data-i18n="cr_themes_desc">Themes extracted from student open-ended responses, mapped to NAQS standards</div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;padding:0 16px 20px;">
+            {% for theme in qa.themes[:8] %}
+            <div style="background:#f8f9fa;border-radius:8px;padding:14px 16px;">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                    <span style="font-size:13px;font-weight:600;color:#202124;">
+                        <i class="fas {{ theme.icon }} me-2" style="color:var(--gf-purple);font-size:12px;"></i>
+                        {{ theme.label }}
+                    </span>
+                    <span style="font-size:12px;font-weight:700;color:var(--gf-purple);">{{ theme.frequency }}×</span>
+                </div>
+                <div style="font-size:11px;color:#5f6368;margin-bottom:8px;">
+                    {{ theme.naqs | join(', ') }}
+                </div>
+                <!-- Sentiment bar for this theme -->
+                <div style="height:6px;border-radius:3px;overflow:hidden;display:flex;background:#dadce0;">
+                    {% if theme.pct_positive > 0 %}
+                    <div style="width:{{ theme.pct_positive }}%;background:#1e8e3e;"></div>
+                    {% endif %}
+                    {% if theme.pct_negative > 0 %}
+                    <div style="width:{{ theme.pct_negative }}%;background:#d93025;margin-left:auto;"></div>
+                    {% endif %}
+                </div>
+                <div style="display:flex;justify-content:space-between;font-size:11px;color:#9aa0a6;margin-top:4px;">
+                    <span>{{ theme.positive_count }} positive</span>
+                    <span>{{ theme.negative_count }} constructive</span>
+                </div>
+            </div>
             {% endfor %}
-            <hr>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Top quotes -->
+    {% if qa.top_positive_quotes or qa.top_constructive_quotes %}
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin-bottom:16px;">
+        {% if qa.top_positive_quotes %}
+        <div class="gf-card">
+            <div style="padding:16px 20px 8px;">
+                <div style="font-size:14px;font-weight:600;color:#1e8e3e;">
+                    <i class="fas fa-thumbs-up me-2"></i><span data-i18n="cr_pos_feedback">Positive Student Feedback</span>
+                </div>
+            </div>
+            <div style="padding:0 16px 16px;">
+                {% for quote in qa.top_positive_quotes %}
+                <div style="background:#f0faf4;border-left:3px solid #1e8e3e;border-radius:0 6px 6px 0;padding:10px 14px;margin-bottom:8px;font-size:13px;color:#202124;font-style:italic;line-height:1.5;">
+                    <i class="fas fa-quote-left me-1" style="font-size:.65rem;color:#1e8e3e;"></i>{{ quote }}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        {% if qa.top_constructive_quotes %}
+        <div class="gf-card">
+            <div style="padding:16px 20px 8px;">
+                <div style="font-size:14px;font-weight:600;color:#d93025;">
+                    <i class="fas fa-tools me-2"></i><span data-i18n="cr_cons_feedback">Constructive Feedback</span>
+                </div>
+            </div>
+            <div style="padding:0 16px 16px;">
+                {% for quote in qa.top_constructive_quotes %}
+                <div style="background:#fef7f7;border-left:3px solid #d93025;border-radius:0 6px 6px 0;padding:10px 14px;margin-bottom:8px;font-size:13px;color:#202124;font-style:italic;line-height:1.5;">
+                    <i class="fas fa-quote-left me-1" style="font-size:.65rem;color:#d93025;"></i>{{ quote }}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+    {% endif %}{# end qualitative_analysis block #}
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         MIXED METHODS RECOMMENDATIONS
+         ═══════════════════════════════════════════════════════════════ -->
+    {% if stats.recommendations %}
+    <div class="gf-section-title" style="margin-top:32px;">
+        <i class="fas fa-tasks me-2" style="color:var(--gf-purple);"></i>
+        <span data-i18n="cr_mixed_title">Mixed Methods Analysis &amp; Recommendations</span>
+    </div>
+    <div style="font-size:13px;color:#5f6368;margin-bottom:16px;line-height:1.6;" data-i18n="cr_mixed_desc">
+        The following recommendations are generated by triangulating quantitative QEI scores
+        with qualitative student feedback themes, aligned to NACTVET quality standards.
+    </div>
+
+    {% for rec in stats.recommendations %}
+    {% set priority_cfg = {
+        'critical': {'bg': '#fce8e6', 'border': '#d93025', 'badge_bg': '#d93025', 'label': 'CRITICAL', 'icon': 'fa-exclamation-circle'},
+        'high':     {'bg': '#fef7e0', 'border': '#f57c00', 'badge_bg': '#f57c00', 'label': 'HIGH',     'icon': 'fa-exclamation-triangle'},
+        'medium':   {'bg': '#e8f0fe', 'border': '#1565C0', 'badge_bg': '#1565C0', 'label': 'MEDIUM',   'icon': 'fa-info-circle'},
+        'positive': {'bg': '#e6f4ea', 'border': '#1e8e3e', 'badge_bg': '#1e8e3e', 'label': 'MAINTAIN', 'icon': 'fa-check-circle'},
+    } %}
+    {% set cfg = priority_cfg.get(rec.priority, priority_cfg.medium) %}
+    <div style="background:{{ cfg.bg }};border-left:4px solid {{ cfg.border }};border-radius:0 8px 8px 0;padding:18px 20px;margin-bottom:14px;">
+        <!-- Rec header -->
+        <div style="display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:12px;">
+            <span style="background:{{ cfg.badge_bg }};color:#fff;font-size:11px;font-weight:700;padding:.3em .8em;border-radius:12px;letter-spacing:.5px;flex-shrink:0;align-self:center;">
+                <i class="fas {{ cfg.icon }} me-1"></i>{{ cfg.label }}
+            </span>
+            <div style="flex:1;min-width:0;">
+                <div style="font-size:15px;font-weight:600;color:#202124;line-height:1.4;">{{ rec.area }}</div>
+                {% if rec.naqs_refs and rec.naqs_refs != 'N/A' %}
+                <div style="font-size:12px;color:#5f6368;margin-top:2px;">NAQS: {{ rec.naqs_refs }}</div>
+                {% endif %}
+            </div>
+            {% if rec.qualitative.triangulated %}
+            <span style="background:var(--gf-purple);color:#fff;font-size:11px;font-weight:600;padding:.25em .7em;border-radius:10px;align-self:flex-start;flex-shrink:0;">
+                <i class="fas fa-link me-1"></i><span data-i18n="cr_triangulated">Triangulated</span>
+            </span>
             {% endif %}
+        </div>
+
+        <!-- Evidence grid -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-bottom:12px;">
+            <!-- Quantitative evidence -->
+            <div style="background:rgba(255,255,255,.65);border-radius:6px;padding:12px 14px;">
+                <div style="font-size:12px;font-weight:700;color:#5f6368;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">
+                    <i class="fas fa-chart-bar me-1"></i><span data-i18n="cr_quant_ev">Quantitative Evidence</span>
+                </div>
+                <div style="font-size:13px;color:#202124;line-height:1.5;">
+                    {{ rec.quantitative.finding }}
+                    {% if rec.quantitative.qei is not none %}
+                    <span style="font-weight:700;margin-left:4px;color:{% if rec.quantitative.qei >= 0.80 %}#1e8e3e{% elif rec.quantitative.qei >= 0.60 %}#009EDB{% elif rec.quantitative.qei >= 0.40 %}#f57c00{% else %}#d93025{% endif %};">
+                        (QEI {{ "%.2f"|format(rec.quantitative.qei) }})
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Qualitative evidence -->
+            {% if rec.qualitative.themes %}
+            <div style="background:rgba(255,255,255,.65);border-radius:6px;padding:12px 14px;">
+                <div style="font-size:12px;font-weight:700;color:#5f6368;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">
+                    <i class="fas fa-comments me-1"></i><span data-i18n="cr_qual_ev">Qualitative Evidence</span>
+                </div>
+                {% for theme in rec.qualitative.themes %}
+                <div style="font-size:13px;color:#202124;margin-bottom:4px;">
+                    <i class="fas fa-tag me-1" style="color:var(--gf-purple);font-size:11px;"></i>
+                    {{ theme.label if theme.label is defined else theme }}
+                    {% if theme.frequency is defined %}
+                    <span style="color:#5f6368;">({{ theme.frequency }} <span data-i18n="cr_mentions">mentions</span>)</span>
+                    {% endif %}
+                </div>
+                {% if theme.sample is defined %}
+                    {% for s in theme.sample[:1] %}
+                    <div style="font-size:12px;color:#5f6368;font-style:italic;padding-left:16px;line-height:1.4;margin-bottom:4px;">"{{ s[:100] }}{% if s|length > 100 %}…{% endif %}"</div>
+                    {% endfor %}
+                {% endif %}
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Recommended Action -->
+        <div style="background:rgba(255,255,255,.65);border-radius:6px;padding:12px 14px;margin-bottom:10px;">
+            <div style="font-size:12px;font-weight:700;color:#5f6368;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">
+                <i class="fas fa-lightbulb me-1"></i><span data-i18n="cr_rec_action">Recommended Action</span>
+            </div>
+            <div style="font-size:13px;color:#202124;line-height:1.6;">{{ rec.action }}</div>
+        </div>
+
+        <!-- Expected Outcome -->
+        <div style="font-size:12px;color:#5f6368;line-height:1.5;">
+            <i class="fas fa-bullseye me-1" style="color:var(--gf-purple);"></i>
+            <strong data-i18n="cr_exp_outcome">Expected Outcome:</strong> {{ rec.expected_outcome }}
+        </div>
+    </div>
+    {% endfor %}
+    {% endif %}{# end recommendations block #}
+
+    <!-- Acknowledgements Section -->
+    {% if acknowledgements %}
+    <div class="ack-section">
+        <div class="ack-section-title">
+            <i class="fas fa-check-double me-2"></i><span data-i18n="cr_ack_section">Report Acknowledgements</span>
+        </div>
+        {% for ack in acknowledgements %}
+        <div class="ack-item ack-{{ ack.role }}">
+            <div class="ack-item-header">
+                <div class="ack-role-badge ack-role-{{ ack.role }}">
+                    <i class="fas fa-{% if ack.role == 'ceo' %}globe{% else %}building{% endif %} me-1"></i>
+                    {{ 'CEO' if ack.role == 'ceo' else 'Director' }}
+                </div>
+                <div class="ack-meta">
+                    <span class="ack-who">{{ ack.acknowledger.display_name if ack.acknowledger else 'Unknown' }}</span>
+                    <span class="ack-when">
+                        <i class="fas fa-clock me-1"></i>{{ ack.acknowledged_at.strftime('%d %b %Y, %H:%M') }}
+                    </span>
+                    {% if ack.action_required %}
+                    <span class="ack-action-flag">
+                        <i class="fas fa-exclamation-triangle me-1"></i><span data-i18n="badge_action_req">Hatua Inahitajika</span>
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+            {% if ack.notes %}
+            <div class="ack-notes">
+                <i class="fas fa-quote-left me-2 text-muted" style="font-size:.7rem;"></i>{{ ack.notes }}
+            </div>
+            {% else %}
+            <div class="ack-notes text-muted" style="font-style:italic;" data-i18n="cr_no_comments">Hakuna maoni yaliyoandikwa.</div>
+            {% endif %}
+        </div>
         {% endfor %}
     </div>
-</div>
-{% endif %}
+    {% endif %}
 
-<div class="mt-4">
-    <a href="{{ url_for('reports.download_pdf', course_id=course.id) }}" class="btn btn-primary"><i class="fas fa-download me-2"></i>Download PDF Report</a>
+    <!-- Export -->
+    <div class="gf-export">
+        <a href="{{ url_for('reports.export_csv', course_id=course.id) }}" class="gf-btn gf-btn-csv">
+            <i class="fas fa-file-csv"></i> <span data-i18n="btn_csv">CSV</span>
+        </a>
+        <a href="{{ url_for('reports.export_excel', course_id=course.id) }}" class="gf-btn gf-btn-excel">
+            <i class="fas fa-file-excel"></i> <span data-i18n="btn_excel">Excel</span>
+        </a>
+        <a href="{{ url_for('reports.download_pdf', course_id=course.id) }}" class="gf-btn gf-btn-pdf">
+            <i class="fas fa-download"></i> <span data-i18n="lbl_pdf_report">PDF Report</span>
+        </a>
+    </div>
 </div>
+
+<style>
+.ack-section {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 1px 2px rgba(0,0,0,.1), 0 1px 4px rgba(0,0,0,.08);
+    margin-bottom: 16px;
+    overflow: hidden;
+}
+.ack-section-title {
+    background: linear-gradient(135deg, #0a1e44 0%, #1565C0 100%);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 600;
+    padding: 14px 20px;
+}
+.ack-item {
+    padding: 16px 20px;
+    border-bottom: 1px solid #f0f0f0;
+}
+.ack-item:last-child { border-bottom: none; }
+.ack-item-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+}
+.ack-role-badge {
+    font-size: .73rem;
+    font-weight: 700;
+    padding: .3em .8em;
+    border-radius: 20px;
+    letter-spacing: .3px;
+}
+.ack-role-ceo      { background: #e8f0fe; color: #1565C0; }
+.ack-role-director { background: #e8f5e9; color: #2e7d32; }
+.ack-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    font-size: .82rem;
+}
+.ack-who  { font-weight: 600; color: #202124; }
+.ack-when { color: #5f6368; }
+.ack-action-flag {
+    background: #fff8e1;
+    color: #e65100;
+    font-size: .72rem;
+    font-weight: 700;
+    padding: .2em .6em;
+    border-radius: 10px;
+    border: 1px solid #ffcc02;
+}
+.ack-notes {
+    background: #f8f9fa;
+    border-left: 3px solid #1565C0;
+    border-radius: 0 6px 6px 0;
+    padding: 10px 14px;
+    font-size: .875rem;
+    color: #202124;
+    line-height: 1.6;
+}
+</style>
 {% endblock %}

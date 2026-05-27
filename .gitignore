@@ -1,0 +1,47 @@
+# Environment variables
+.env
+*.env
+.env.local
+
+# Python compiled files
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+
+# Virtual environment
+venv/
+env/
+.venv/
+
+# Flask instance folder (local secrets)
+instance/
+.webassets-cache
+
+# Local development database (SQLite only)
+*.db
+*.sqlite
+*.sqlite3
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/
+
+# NOTE: migrations/ is intentionally NOT ignored
+# Railway needs migrations/versions/ to set up the database

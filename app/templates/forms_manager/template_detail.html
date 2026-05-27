@@ -1,0 +1,282 @@
+{% extends "base.html" %}
+{% block content %}
+
+<!-- Header -->
+<div class="page-header mb-4">
+  <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+    <div>
+      <nav aria-label="breadcrumb" class="mb-1">
+        <ol class="breadcrumb mb-0" style="opacity:.75">
+          <li class="breadcrumb-item"><a href="{{ url_for('forms_manager.list_forms') }}" class="text-white-50">Fomu</a></li>
+          <li class="breadcrumb-item active text-white-50">Template</li>
+        </ol>
+      </nav>
+      <h2 class="mb-1">{{ tmpl.title }}</h2>
+      <div class="gold-bar"></div>
+      <div class="d-flex gap-2 flex-wrap mt-1">
+        <span class="badge
+          {% if tmpl.form_type == 'long_course' %}bg-info{% else %}bg-warning text-dark{% endif %}">
+          {{ 'Mafunzo Marefu' if tmpl.form_type == 'long_course' else 'Mafunzo Mafupi' }}
+        </span>
+        <span class="badge bg-light text-dark border"><i class="fas fa-lock me-1"></i>Template — Soma Tu</span>
+        <span class="badge bg-light text-dark border">{{ tmpl.policy_ref }}</span>
+      </div>
+    </div>
+    <a href="{{ url_for('forms_manager.list_forms') }}" class="btn btn-outline-light btn-sm">
+      <i class="fas fa-arrow-left me-1"></i>Rudi
+    </a>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- LEFT: Template Content Preview -->
+  <div class="col-lg-7">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="fas fa-list-ol me-2"></i>Muundo wa Fomu</span>
+        <span class="badge bg-light text-dark">{{ section_data | length }} sehemu · {{ tmpl.policy_ref }}</span>
+      </div>
+      <div class="card-body p-0">
+        <div class="accordion accordion-flush" id="templateAccordion">
+          {% for item in section_data %}
+          {% set sec = item.section %}
+          {% set qs  = item.questions %}
+          <div class="accordion-item border-0 border-bottom">
+            <h2 class="accordion-header">
+              <button class="accordion-button {% if not loop.first %}collapsed{% endif %} section-accordion-btn"
+                      type="button" data-bs-toggle="collapse"
+                      data-bs-target="#sec{{ sec.id }}" aria-expanded="{{ 'true' if loop.first else 'false' }}">
+                <div class="d-flex align-items-center gap-2 w-100">
+                  <span class="section-num">{{ loop.index }}</span>
+                  <div class="flex-fill">
+                    <div class="fw-bold">{{ sec.title }}</div>
+                    {% if sec.naqs_reference %}
+                    <small class="naqs-ref">{{ sec.naqs_reference }}</small>
+                    {% endif %}
+                  </div>
+                  <span class="badge bg-light text-dark ms-2">{{ qs | length }} maswali</span>
+                </div>
+              </button>
+            </h2>
+            <div id="sec{{ sec.id }}" class="accordion-collapse collapse {% if loop.first %}show{% endif %}">
+              <div class="accordion-body py-2">
+                <ol class="question-list">
+                  {% for q in qs %}
+                  <li class="question-item">
+                    <div class="d-flex justify-content-between align-items-start gap-2">
+                      <span class="question-text">{{ q.question_text }}</span>
+                      <span class="question-type-badge q-{{ q.question_type }}">
+                        {% if q.question_type == 'likert' %}
+                          <i class="fas fa-star me-1"></i>Likert 1–5
+                        {% elif q.question_type == 'text' %}
+                          <i class="fas fa-font me-1"></i>Maandishi
+                        {% elif q.question_type == 'multiple_choice' %}
+                          <i class="fas fa-dot-circle me-1"></i>Chaguo
+                        {% else %}
+                          {{ q.question_type }}
+                        {% endif %}
+                        {% if not q.required %}<span class="text-muted"> · Hiari</span>{% endif %}
+                      </span>
+                    </div>
+                  </li>
+                  {% endfor %}
+                </ol>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Existing Clones -->
+    {% if clones %}
+    <div class="card mt-3">
+      <div class="card-header card-header-light">
+        <i class="fas fa-copy me-2 text-primary"></i>Nakala Zilizoundwa ({{ clones | length }})
+      </div>
+      <ul class="list-group list-group-flush">
+        {% for c in clones %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+          <div>
+            <div class="fw-semibold">{{ c.title }}</div>
+            {% if c.facilitator_name %}
+            <small class="text-muted"><i class="fas fa-chalkboard-teacher me-1"></i>{{ c.facilitator_name }}</small>
+            {% endif %}
+          </div>
+          <div class="d-flex gap-2 align-items-center">
+            <small class="text-muted">{{ c.created_at.strftime('%d/%m/%Y') }}</small>
+            {% if c.is_active %}
+            <span class="badge bg-success">Hai</span>
+            {% else %}
+            <span class="badge bg-secondary">Imesimamishwa</span>
+            {% endif %}
+            <a href="{{ url_for('forms_manager.edit_form', form_id=c.id) }}"
+               class="btn btn-sm btn-outline-primary">
+              <i class="fas fa-edit"></i>
+            </a>
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- RIGHT: Clone Form -->
+  <div class="col-lg-5" id="clone-section">
+    <div class="card clone-card">
+      <div class="card-header clone-header">
+        <i class="fas fa-copy me-2"></i>Nakili Template Hii
+      </div>
+      <div class="card-body">
+        <div class="clone-info-box mb-4">
+          <i class="fas fa-info-circle me-2 text-primary"></i>
+          <span>
+            Nakili template hii ili kupata fomu inayoweza kuhaririwa.
+            Template ya msingi itabaki bila kubadilika.
+          </span>
+        </div>
+
+        <form method="post" action="{{ url_for('forms_manager.clone_template', form_id=tmpl.id) }}">
+          {{ clone_form.hidden_tag() }}
+
+          <!-- Form Title -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold">
+              <i class="fas fa-heading me-1 text-primary"></i>
+              {{ clone_form.title.label.text }}
+              <span class="text-danger">*</span>
+            </label>
+            {{ clone_form.title(class="form-control",
+               placeholder="Mfano: Fomu ya Tathmini — Uhasibu Semester 1 2026") }}
+            <div class="form-text">Weka jina mahususi ili utambue fomu hii baadaye</div>
+          </div>
+
+          <!-- Facilitator Name (free text) -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold">
+              <i class="fas fa-chalkboard-teacher me-1 text-primary"></i>
+              {{ clone_form.facilitator_name.label.text }}
+            </label>
+            {{ clone_form.facilitator_name(class="form-control",
+               placeholder="Mfano: Dr. John Mtukudzi") }}
+            <div class="form-text">Andika jina la mkufunzi/mwalimu anayetathminiwa</div>
+          </div>
+
+          <!-- OR divider -->
+          <div class="d-flex align-items-center gap-2 my-3">
+            <hr class="flex-fill"> <small class="text-muted">AU chagua kutoka mfumo</small> <hr class="flex-fill">
+          </div>
+
+          <!-- Facilitator from DB -->
+          <div class="mb-4">
+            <label class="form-label fw-semibold">
+              <i class="fas fa-user-tie me-1 text-primary"></i>
+              {{ clone_form.facilitator_id.label.text }}
+            </label>
+            {{ clone_form.facilitator_id(class="form-select") }}
+            <div class="form-text">Ukichagua mkufunzi kutoka hapa, jina lake litatumika kiotomatiki</div>
+          </div>
+
+          <!-- NACTVET/Policy info -->
+          <div class="policy-info-box mb-4">
+            <div class="d-flex gap-2 align-items-start">
+              <i class="fas fa-shield-alt mt-1 text-success"></i>
+              <div>
+                <div class="fw-semibold small">Sera inayotumika:</div>
+                <div class="small text-muted">{{ tmpl.policy_ref }}</div>
+                <div class="small text-muted mt-1">
+                  Nakala itakuwa na sehemu <strong>{{ section_data | length }}</strong>
+                  na maswali yote kutoka template.
+                  Unaweza kuongeza, kuhariri au kufuta maswali baada ya kunakili.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="d-grid">
+            <button type="submit" class="btn btn-primary btn-lg">
+              <i class="fas fa-copy me-2"></i>Nakili na Hariri Sasa
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.section-accordion-btn {
+  background: #f8fafc;
+  border-radius: 0 !important;
+}
+.section-accordion-btn:not(.collapsed) { background: #e8f0fe; }
+[data-bs-theme="dark"] .section-accordion-btn { background: #111d35; }
+[data-bs-theme="dark"] .section-accordion-btn:not(.collapsed) { background: #0d2060; }
+
+.section-num {
+  width: 28px; height: 28px;
+  background: var(--navy-mid); color: #fff;
+  border-radius: 50%; display: flex;
+  align-items: center; justify-content: center;
+  font-weight: 700; font-size: .8rem;
+  flex-shrink: 0;
+}
+
+.naqs-ref {
+  color: var(--navy-mid); font-size: .73rem;
+  font-weight: 600; letter-spacing: .3px;
+}
+
+.question-list {
+  list-style: none; padding: 0; margin: 0;
+}
+.question-item {
+  padding: .55rem 0;
+  border-bottom: 1px solid var(--border-c);
+  font-size: .875rem;
+}
+.question-item:last-child { border-bottom: none; }
+
+.question-text { flex: 1; line-height: 1.5; }
+
+.question-type-badge {
+  font-size: .7rem; font-weight: 600;
+  padding: .2em .6em; border-radius: 10px;
+  white-space: nowrap; flex-shrink: 0;
+  margin-left: 8px;
+}
+.q-likert { background: #e3f2fd; color: #1565C0; }
+.q-text   { background: #f3e5f5; color: #7b1fa2; }
+.q-multiple_choice { background: #e8f5e9; color: #2e7d32; }
+
+.clone-card {
+  border: 2px solid var(--navy-mid);
+  border-radius: var(--radius-lg);
+  position: sticky; top: 80px;
+}
+.clone-header {
+  background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 100%) !important;
+  color: #fff !important;
+  font-weight: 700;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0 !important;
+}
+.clone-info-box {
+  background: #e8f0fe;
+  border-radius: var(--radius-sm);
+  padding: .75rem;
+  font-size: .875rem;
+  display: flex;
+  align-items: flex-start;
+  gap: .5rem;
+}
+.policy-info-box {
+  background: #e8f5e9;
+  border-radius: var(--radius-sm);
+  padding: .75rem;
+}
+[data-bs-theme="dark"] .clone-info-box { background: #0d2060; }
+[data-bs-theme="dark"] .policy-info-box { background: #1b4020; }
+</style>
+{% endblock %}

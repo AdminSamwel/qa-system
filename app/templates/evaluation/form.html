@@ -1,324 +1,427 @@
 {% extends "base.html" %}
 {% block content %}
 <style>
+    /* Google Forms-inspired styling for long course evaluation */
+    :root {
+        --form-bg: #e8f4fd;
+        --card-bg: #ffffff;
+        --primary-color: #009EDB;
+        --accent-color: #2E3192;
+        --text-color: #202124;
+        --secondary-text: #5f6368;
+        --border-color: #dadce0;
+        --required-star: #d93025;
+        --progress-color: #1a73e8;
+    }
+
     .eval-section { display: none; }
     .eval-section.active { display: block; }
-    .question-card {
-        background: #fff;
-        border: 1px solid rgba(0,0,0,0.08);
-        border-radius: 12px;
-        padding: 1.5rem;
-        margin-bottom: 1.5rem;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-        transition: box-shadow 0.2s;
+
+    .section-card {
+        background: var(--card-bg);
+        border-radius: 8px;
+        box-shadow: 0 1px 2px 0 rgba(60,64,67,.3), 0 1px 3px 1px rgba(60,64,67,.15);
+        margin-bottom: 12px;
+        padding: 24px;
+        page-break-inside: avoid;
     }
-    .question-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
-    .progress-sticky {
-        position: sticky;
-        top: 0;
-        background: #f8f9fa;
-        padding: 0.8rem 1rem;
-        border-radius: 0 0 12px 12px;
-        z-index: 10;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-    }
-    .likert-scale { display: flex; gap: 1.5rem; flex-wrap: wrap; }
-    .likert-option { text-align: center; }
-    .likert-option input[type="radio"] { accent-color: #009EDB; }
-    .btn-next, .btn-back, .btn-submit {
-        padding: 0.6rem 2rem;
-        font-weight: 600;
-    }
-    #backToTopBtn {
-        display: none;
-        position: fixed;
-        bottom: 30px;
-        right: 30px;
-        z-index: 99;
-        border: none;
-        outline: none;
-        background-color: #009EDB;
-        color: white;
-        cursor: pointer;
-        padding: 12px 16px;
-        border-radius: 50%;
+
+    .section-title {
         font-size: 20px;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-        transition: opacity 0.3s;
+        font-weight: 400;
+        color: var(--accent-color);
+        margin-bottom: 16px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid var(--border-color);
     }
-    #backToTopBtn:hover { background-color: #007bb5; }
+
+    .question-item {
+        margin-bottom: 24px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid var(--border-color);
+    }
+    .question-item:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+    }
+
+    .question-text {
+        font-size: 15px;
+        font-weight: 500;
+        color: var(--text-color);
+        margin-bottom: 12px;
+        line-height: 1.5;
+    }
+
+    .required-star {
+        color: var(--required-star);
+        font-weight: 700;
+        margin-left: 2px;
+    }
+
+    /* Likert scale labels (descriptions) */
+    .likert-labels {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+        font-size: 11px;
+        color: var(--secondary-text);
+        padding: 0 5px;
+    }
+    .likert-labels span {
+        text-align: center;
+        flex: 1;
+        min-width: 50px;
+    }
+
+    /* Likert scale buttons */
+    .likert-scale {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+    .likert-option { flex: 1; min-width: 50px; }
+    .likert-option input[type="radio"] { display: none; }
+    .likert-option label {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 10px 5px;
+        border: 2px solid var(--border-color);
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        background: #fff;
+        color: var(--text-color);
+        font-size: 14px;
+        font-weight: 500;
+        user-select: none;
+    }
+    .likert-option label:hover {
+        border-color: var(--primary-color);
+        background: #e0f2fe;
+    }
+    .likert-option input[type="radio"]:checked + label {
+        border-color: var(--primary-color);
+        background: #d0eaff;
+        color: var(--primary-color);
+        font-weight: 700;
+        box-shadow: 0 0 0 2px var(--primary-color);
+    }
+
+    /* Scale description at the top */
+    .scale-info {
+        background: #f8f9fa;
+        border-left: 4px solid var(--primary-color);
+        padding: 10px 16px;
+        border-radius: 4px;
+        margin-bottom: 20px;
+        font-size: 13px;
+        color: var(--secondary-text);
+        line-height: 1.8;
+    }
+    .scale-info strong {
+        color: var(--accent-color);
+    }
+
+    .form-control {
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+        padding: 12px 16px;
+        font-size: 14px;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        width: 100%;
+        resize: vertical;
+    }
+    .form-control:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 2px rgba(0,158,219,0.2);
+        outline: none;
+    }
+
+    .form-check {
+        padding-left: 2em;
+        margin-bottom: 8px;
+    }
+    .form-check-input {
+        width: 20px;
+        height: 20px;
+        border: 2px solid var(--secondary-text);
+        cursor: pointer;
+        accent-color: var(--primary-color);
+    }
+    .form-check-label {
+        font-size: 14px;
+        color: var(--text-color);
+        cursor: pointer;
+    }
+
+    /* Navigation */
+    .nav-buttons {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 8px;
+    }
+    .btn {
+        padding: 10px 24px;
+        font-size: 14px;
+        font-weight: 500;
+        border-radius: 4px;
+        text-transform: none;
+        letter-spacing: 0.25px;
+        border: none;
+        cursor: pointer;
+    }
+    .btn-primary-nav { background-color: var(--primary-color); color: white; }
+    .btn-primary-nav:hover { background-color: #0082b3; }
+    .btn-secondary-nav { background-color: transparent; color: var(--primary-color); border: 1px solid var(--border-color); }
+    .btn-secondary-nav:hover { background-color: #e0f2fe; }
+    .btn-success-nav { background-color: #1e8e3e; color: white; }
+    .btn-success-nav:hover { background-color: #188038; }
+
+    /* Progress */
+    .progress-container { margin-bottom: 10px; }
+    .progress {
+        height: 4px;
+        border-radius: 2px;
+        background-color: #e0e0e0;
+    }
+    .progress-bar {
+        background-color: var(--progress-color);
+        transition: width 0.3s ease;
+    }
+
+    /* Form header */
+    .form-header-card {
+        background: var(--card-bg);
+        border-top: 10px solid var(--primary-color);
+        border-radius: 8px 8px 0 0;
+        box-shadow: 0 1px 2px 0 rgba(60,64,67,.3), 0 1px 3px 1px rgba(60,64,67,.15);
+        padding: 24px;
+        margin-bottom: 12px;
+    }
+    .form-title {
+        font-size: 32px;
+        font-weight: 400;
+        color: var(--text-color);
+        margin-bottom: 8px;
+    }
+    .form-description {
+        font-size: 14px;
+        color: var(--secondary-text);
+    }
 </style>
 
-<button id="backToTopBtn" title="Back to top"><i class="fas fa-arrow-up"></i></button>
-
-<div class="card shadow-sm border-0">
-    <div class="card-header bg-primary text-white">
-        <h4 class="mb-0"><i class="fas fa-clipboard-check me-2"></i>Evaluate: {{ course.code }} - {{ course.name }}</h4>
-    </div>
-    <div class="card-body" id="evaluationApp">
-        <p><strong>Form:</strong> {{ form.title }}</p>
-
+<div class="form-header-card">
+    <h1 class="form-title">{{ form.title }}</h1>
+    <div class="form-description">
+        <strong>Course:</strong> {{ course.code }} - {{ course.name }}
         {% if form.deadline %}
-        <div class="alert alert-warning">
-            <i class="fas fa-clock"></i> Deadline: {{ form.deadline.strftime('%d %b %Y %H:%M') }}
-        </div>
-        {% endif %}
-
-        {% set sections = form.sections|list|sort(attribute='order') %}
-        {% if sections|length == 0 %}
-            <div class="alert alert-warning">This form has no sections yet.</div>
-        {% else %}
-            <form id="evalForm" method="post" action="{{ url_for('evaluation.evaluate_course', course_id=course.id) }}">
-                <input type="hidden" id="currentSectionIdx" value="0">
-
-                {% for section in sections %}
-                <div class="eval-section" data-section-id="{{ section.id }}" data-section-order="{{ section.order }}" {% if loop.first %}style="display:block;"{% endif %}>
-                    <h4 class="text-accent mb-3" style="font-weight:700; border-left:4px solid var(--accent-color); padding-left:1rem;">{{ section.display_title }}</h4>
-                    {% for q in section.questions|sort(attribute='order') %}
-                        <div class="question-card" data-question-id="{{ q.id }}"
-                             data-parent-id="{{ q.parent_question_id or '' }}"
-                             data-condition="{{ q.condition_value or '' }}"
-                             data-go-to="{{ q.go_to_section_id or '' }}"
-                             {% if q.parent_question_id %}style="display:none;"{% endif %}>
-                            <label class="fw-bold mb-2" style="font-size:1.05rem; color:#2c3e50;">
-                                {{ q.display_text }}
-                                {% if q.required %}<span class="text-danger">*</span>{% endif %}
-                            </label>
-                            {% if q.question_type == 'likert' %}
-                                <div class="likert-scale mt-2">
-                                    {% for i in range(1,6) %}
-                                    <div class="likert-option">
-                                        <input class="form-check-input" type="radio" name="q_{{ q.id }}" value="{{ i }}" id="q{{ q.id }}_{{ i }}" {% if q.required %}required{% endif %} data-qid="{{ q.id }}" data-value="{{ i }}">
-                                        <label for="q{{ q.id }}_{{ i }}" class="d-block small mt-1">{{ i }}</label>
-                                    </div>
-                                    {% endfor %}
-                                </div>
-                            {% elif q.question_type == 'text' %}
-                                <textarea class="form-control mt-2" name="q_{{ q.id }}" rows="3" {% if q.required %}required{% endif %} style="border-radius:8px;" data-qid="{{ q.id }}"></textarea>
-                            {% elif q.question_type == 'multiple_choice' %}
-                                {% for opt in q.options|from_json %}
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="q_{{ q.id }}" value="{{ opt }}" id="q{{ q.id }}_{{ loop.index }}" {% if q.required %}required{% endif %} data-qid="{{ q.id }}" data-value="{{ opt }}">
-                                    <label class="form-check-label" for="q{{ q.id }}_{{ loop.index }}">{{ opt }}</label>
-                                </div>
-                                {% endfor %}
-                            {% elif q.question_type == 'checkbox' %}
-                                {% for opt in q.options|from_json %}
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="q_{{ q.id }}" value="{{ opt }}" id="q{{ q.id }}_{{ loop.index }}" data-qid="{{ q.id }}" data-value="{{ opt }}">
-                                    <label class="form-check-label" for="q{{ q.id }}_{{ loop.index }}">{{ opt }}</label>
-                                </div>
-                                {% endfor %}
-                            {% endif %}
-                        </div>
-                    {% endfor %}
-                </div>
-                {% endfor %}
-
-                {% if form.show_progress %}
-                <div class="progress-sticky mt-3">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <small class="text-muted fw-bold">Progress</small>
-                        <small><span id="answeredCount">0</span> / <span id="totalQuestions">0</span> answered</small>
-                    </div>
-                    <div class="progress" style="height:18px; border-radius:10px;">
-                        <div class="progress-bar bg-accent" id="progressBar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
-                    </div>
-                </div>
-                {% endif %}
-
-                <div class="d-flex justify-content-between mt-4">
-                    <button type="button" class="btn btn-secondary btn-back" style="display:none;"><i class="fas fa-arrow-left me-1"></i> Back</button>
-                    <button type="button" class="btn btn-primary btn-next"><i class="fas fa-arrow-right me-1"></i> Next</button>
-                    <button type="submit" class="btn btn-success btn-submit" style="display:none;"><i class="fas fa-paper-plane me-1"></i> Submit</button>
-                </div>
-            </form>
+        <br><span style="color: #c5221f;"><i class="fas fa-clock"></i> Deadline: {{ form.deadline.strftime('%d %b %Y %H:%M') }}</span>
         {% endif %}
     </div>
 </div>
 
+<!-- Rating Scale Information -->
+<div class="scale-info">
+    <strong>Please rate your level of agreement with each statement using the scale below:</strong><br>
+    1 = Strongly Disagree &nbsp;|&nbsp; 2 = Disagree &nbsp;|&nbsp; 3 = Neutral &nbsp;|&nbsp; 4 = Agree &nbsp;|&nbsp; 5 = Strongly Agree
+</div>
+
+{% set sections = form.sections|list|sort(attribute='order') %}
+{% if sections|length == 0 %}
+    <div class="section-card">
+        <p class="text-muted">This form has no sections yet.</p>
+    </div>
+{% else %}
+    <div class="progress-container">
+        <div class="progress">
+            <div class="progress-bar" id="progressBar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+        </div>
+    </div>
+
+    <form id="evalForm" method="post" action="{{ url_for('evaluation.evaluate_course', course_id=course.id) }}">
+        {% for section in sections %}
+        <div class="section-card eval-section" {% if loop.first %}style="display:block;"{% else %}style="display:none;"{% endif %}>
+            <h2 class="section-title">{{ section.display_title }}</h2>
+            {% for q in section.questions|sort(attribute='order') %}
+                <div class="question-item" data-question-id="{{ q.id }}"
+                     data-parent-id="{{ q.parent_question_id or '' }}"
+                     data-condition="{{ q.condition_value or '' }}"
+                     data-go-to="{{ q.go_to_section_id or '' }}"
+                     {% if q.parent_question_id %}style="display:none;"{% endif %}>
+                    <div class="question-text">
+                        {{ q.display_text }}
+                        {% if q.required %}<span class="required-star">*</span>{% endif %}
+                    </div>
+                    {% if q.question_type == 'likert' %}
+                        <!-- Likert scale with labels -->
+                        <div class="likert-labels">
+                            <span>1<br>Strongly<br>Disagree</span>
+                            <span>2<br>Disagree</span>
+                            <span>3<br>Neutral</span>
+                            <span>4<br>Agree</span>
+                            <span>5<br>Strongly<br>Agree</span>
+                        </div>
+                        <div class="likert-scale">
+                            {% for i in range(1,6) %}
+                            <div class="likert-option">
+                                <input class="form-check-input" type="radio" name="q_{{ q.id }}" value="{{ i }}" id="q{{ q.id }}_{{ i }}" {% if q.required %}required{% endif %}>
+                                <label for="q{{ q.id }}_{{ i }}">{{ i }}</label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% elif q.question_type == 'text' %}
+                        <textarea class="form-control" name="q_{{ q.id }}" rows="3" {% if q.required %}required{% endif %} placeholder="Your answer"></textarea>
+                    {% elif q.question_type == 'multiple_choice' %}
+                        {% for opt in q.options|from_json %}
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="q_{{ q.id }}" value="{{ opt }}" id="q{{ q.id }}_{{ loop.index }}" {% if loop.first and q.required %}required{% endif %}>
+                            <label class="form-check-label" for="q{{ q.id }}_{{ loop.index }}">{{ opt }}</label>
+                        </div>
+                        {% endfor %}
+                    {% elif q.question_type == 'checkbox' %}
+                        {% for opt in q.options|from_json %}
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="q_{{ q.id }}" value="{{ opt }}" id="q{{ q.id }}_{{ loop.index }}">
+                            <label class="form-check-label" for="q{{ q.id }}_{{ loop.index }}">{{ opt }}</label>
+                        </div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+        {% endfor %}
+
+        <div class="nav-buttons">
+            <button type="button" class="btn btn-secondary-nav" id="backBtn" style="visibility:hidden;">
+                <i class="fas fa-arrow-left me-1"></i> Back
+            </button>
+            <button type="button" class="btn btn-primary-nav" id="nextBtn">
+                Next <i class="fas fa-arrow-right ms-1"></i>
+            </button>
+            <button type="submit" class="btn btn-success-nav" id="submitBtn" style="display:none;">
+                <i class="fas fa-paper-plane me-1"></i> Submit
+            </button>
+        </div>
+    </form>
+{% endif %}
+
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const sections = document.querySelectorAll('.eval-section');
-    const totalSections = sections.length;
-    let currentIndex = 0;
+    (function() {
+        const sections = document.querySelectorAll('.eval-section');
+        const totalSections = sections.length;
+        let currentIndex = 0;
+        const backBtn = document.getElementById('backBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const submitBtn = document.getElementById('submitBtn');
+        const progressBar = document.getElementById('progressBar');
 
-    const backBtn = document.querySelector('.btn-back');
-    const nextBtn = document.querySelector('.btn-next');
-    const submitBtn = document.querySelector('.btn-submit');
-    const backToTopBtn = document.getElementById('backToTopBtn');
-
-    // Show/hide back-to-top button based on scroll position
-    window.onscroll = function() {
-        if (document.body.scrollTop > 300 || document.documentElement.scrollTop > 300) {
-            backToTopBtn.style.display = 'block';
-        } else {
-            backToTopBtn.style.display = 'none';
+        function updateProgress() {
+            const pct = totalSections > 0 ? Math.round(((currentIndex + 1) / totalSections) * 100) : 0;
+            progressBar.style.width = pct + '%';
+            progressBar.setAttribute('aria-valuenow', pct);
         }
-    };
 
-    backToTopBtn.addEventListener('click', function() {
-        window.scrollTo({top: 0, behavior: 'smooth'});
-    });
-
-    {% if form.show_progress %}
-    const allQuestionCards = document.querySelectorAll('.question-card');
-    const totalQ = allQuestionCards.length;
-    document.getElementById('totalQuestions').textContent = totalQ;
-
-    function updateProgress() {
-        let answered = 0;
-        allQuestionCards.forEach(q => {
-            if (q.style.display === 'none') return;
-            const inputs = q.querySelectorAll('input, textarea');
-            let isAnswered = false;
-            if (inputs.length > 0) {
-                if (inputs[0].type === 'radio') {
-                    isAnswered = q.querySelector('input:checked') !== null;
-                } else if (inputs[0].type === 'checkbox') {
-                    isAnswered = q.querySelectorAll('input:checked').length > 0;
-                } else if (inputs[0].type === 'textarea') {
-                    isAnswered = inputs[0].value.trim() !== '';
-                }
+        function showSection(index) {
+            sections.forEach((sec, i) => { sec.style.display = (i === index) ? 'block' : 'none'; });
+            backBtn.style.visibility = (index > 0) ? 'visible' : 'hidden';
+            if (index < totalSections - 1) {
+                nextBtn.style.display = 'inline-block';
+                submitBtn.style.display = 'none';
+            } else {
+                nextBtn.style.display = 'none';
+                submitBtn.style.display = 'inline-block';
             }
-            if (isAnswered) answered++;
-        });
-        const pct = totalQ ? Math.round((answered / totalQ)*100) : 0;
-        document.getElementById('answeredCount').textContent = answered;
-        document.getElementById('progressBar').style.width = pct + '%';
-        document.getElementById('progressBar').textContent = pct + '%';
-    }
-    document.addEventListener('change', updateProgress);
-    updateProgress();
-    {% endif %}
+            currentIndex = index;
+            updateProgress();
+            evaluateConditionsInSection(sections[index]);
+            window.scrollTo({top: 0, behavior: 'smooth'});
+        }
 
-    function showSection(index) {
-        sections.forEach((sec, i) => { sec.style.display = (i === index) ? 'block' : 'none'; });
-        backBtn.style.display = (index > 0) ? 'inline-block' : 'none';
-        nextBtn.style.display = (index < totalSections - 1) ? 'inline-block' : 'none';
-        submitBtn.style.display = (index === totalSections - 1) ? 'inline-block' : 'none';
-        currentIndex = index;
-        // Scroll to top of form
-        document.getElementById('evaluationApp').scrollIntoView({ behavior: 'smooth' });
-        // Evaluate conditions in the new section
-        evaluateConditionsInSection(sections[index]);
-    }
-
-    function evaluateConditionsInSection(section) {
-        section.querySelectorAll('.question-card').forEach(q => {
-            const parentId = q.dataset.parentId;
-            if (!parentId) return;
-            const conditionValue = q.dataset.condition;
-            // Find parent inputs (could be radio, checkbox, textarea)
-            const parentInputs = document.querySelectorAll(`[data-qid="${parentId}"]`);
-            let shouldShow = false;
-            if (parentInputs.length > 0) {
-                if (parentInputs[0].type === 'radio') {
-                    const checked = Array.from(parentInputs).find(i => i.checked);
-                    if (checked) {
-                        shouldShow = checked.value === conditionValue;
+        function evaluateConditionsInSection(section) {
+            section.querySelectorAll('.question-item').forEach(q => {
+                const parentId = q.dataset.parentId;
+                if (!parentId) return;
+                const conditionValue = q.dataset.condition;
+                const parentInputs = document.querySelectorAll(`[name="q_${parentId}"]`);
+                let shouldShow = false;
+                if (parentInputs.length > 0) {
+                    if (parentInputs[0].type === 'radio') {
+                        const checked = Array.from(parentInputs).find(i => i.checked);
+                        if (checked) shouldShow = checked.value === conditionValue;
                     }
-                } else if (parentInputs[0].type === 'checkbox') {
-                    const checkedValues = Array.from(parentInputs).filter(i => i.checked).map(i => i.value);
-                    if (conditionValue.startsWith('[')) {
-                        try {
-                            const required = JSON.parse(conditionValue);
-                            shouldShow = required.every(v => checkedValues.includes(v));
-                        } catch(e) { shouldShow = false; }
-                    } else {
-                        shouldShow = checkedValues.includes(conditionValue);
-                    }
-                } else if (parentInputs[0].type === 'textarea') {
-                    shouldShow = parentInputs[0].value.trim() === conditionValue;
                 }
-            }
-            q.style.display = shouldShow ? 'block' : 'none';
-            // Update required attributes to prevent validation errors on hidden questions
-            q.querySelectorAll('[required]').forEach(el => {
-                if (!shouldShow) {
-                    el.removeAttribute('required');
-                } else {
-                    el.setAttribute('required', true);
-                }
+                q.style.display = shouldShow ? 'block' : 'none';
+                q.querySelectorAll('[required]').forEach(el => {
+                    if (!shouldShow) el.removeAttribute('required');
+                    else el.setAttribute('required', true);
+                });
             });
-        });
-    }
+        }
 
-    function isSectionValid(section) {
-        let valid = true;
-        section.querySelectorAll('.question-card').forEach(q => {
-            if (q.style.display === 'none') return;
-            const requiredInputs = q.querySelectorAll('[required]');
-            requiredInputs.forEach(input => {
+        function isSectionValid(section) {
+            let valid = true;
+            section.querySelectorAll('[required]').forEach(input => {
+                if (input.closest('.question-item') && input.closest('.question-item').style.display === 'none') return;
                 if (input.type === 'radio' || input.type === 'checkbox') {
-                    const name = input.name;
-                    if (!document.querySelector(`[name="${name}"]:checked`)) valid = false;
+                    if (!document.querySelector(`[name="${input.name}"]:checked`)) valid = false;
                 } else if (input.type === 'textarea') {
                     if (!input.value.trim()) valid = false;
                 }
             });
-        });
-        return valid;
-    }
-
-    nextBtn.addEventListener('click', function() {
-        if (!isSectionValid(sections[currentIndex])) {
-            alert('Please answer all required questions in this section.');
-            return;
+            return valid;
         }
-        evaluateConditionsInSection(sections[currentIndex]);
-        // Check for jump (go_to_section)
-        let jumpId = null;
-        for (let q of sections[currentIndex].querySelectorAll('.question-card')) {
-            if (q.style.display === 'none') continue;
-            const goTo = q.dataset.goTo;
-            if (!goTo) continue;
-            const conditionValue = q.dataset.condition;
-            const inputs = q.querySelectorAll('input, textarea');
-            let answer = null;
-            if (inputs.length > 0) {
-                if (inputs[0].type === 'radio') {
-                    const checked = q.querySelector('input:checked');
-                    if (checked) answer = checked.value;
-                } else if (inputs[0].type === 'textarea') {
-                    answer = inputs[0].value.trim();
+
+        nextBtn.addEventListener('click', function() {
+            if (!isSectionValid(sections[currentIndex])) {
+                alert('Please answer all required questions before proceeding.');
+                return;
+            }
+            evaluateConditionsInSection(sections[currentIndex]);
+            let jumpId = null;
+            for (let q of sections[currentIndex].querySelectorAll('.question-item')) {
+                if (q.style.display === 'none') continue;
+                const goTo = q.dataset.goTo;
+                if (!goTo) continue;
+                const conditionValue = q.dataset.condition;
+                const inputs = q.querySelectorAll('input, textarea');
+                let answer = null;
+                if (inputs.length > 0) {
+                    if (inputs[0].type === 'radio') {
+                        const checked = q.querySelector('input:checked');
+                        if (checked) answer = checked.value;
+                    }
+                }
+                if (conditionValue && answer === conditionValue) {
+                    jumpId = parseInt(goTo, 10);
+                    break;
                 }
             }
-            if (conditionValue && answer === conditionValue) {
-                jumpId = parseInt(goTo, 10);
-                break;
+            let nextIdx = currentIndex + 1;
+            if (jumpId) {
+                const targetIdx = Array.from(sections).findIndex(s => s.dataset.sectionId == jumpId);
+                if (targetIdx !== -1) nextIdx = targetIdx;
             }
-        }
-        let nextIdx;
-        if (jumpId) {
-            nextIdx = Array.from(sections).findIndex(s => s.dataset.sectionId == jumpId);
-            if (nextIdx === -1) nextIdx = currentIndex + 1;
-        } else {
-            nextIdx = currentIndex + 1;
-        }
-        if (nextIdx >= totalSections) nextIdx = totalSections - 1;
-        showSection(nextIdx);
-        {% if form.show_progress %} updateProgress(); {% endif %}
-    });
+            if (nextIdx >= totalSections) nextIdx = totalSections - 1;
+            showSection(nextIdx);
+        });
 
-    backBtn.addEventListener('click', function() {
-        if (currentIndex > 0) {
-            showSection(currentIndex - 1);
-            {% if form.show_progress %} updateProgress(); {% endif %}
-        }
-    });
+        backBtn.addEventListener('click', function() {
+            if (currentIndex > 0) showSection(currentIndex - 1);
+        });
 
-    // When any input changes, re-evaluate conditions in the current section
-    document.addEventListener('change', function(e) {
-        if (e.target.closest('.eval-section')) {
-            evaluateConditionsInSection(e.target.closest('.eval-section'));
-            {% if form.show_progress %} updateProgress(); {% endif %}
-        }
-    });
+        document.addEventListener('change', function(e) {
+            if (e.target.closest('.eval-section')) {
+                evaluateConditionsInSection(e.target.closest('.eval-section'));
+            }
+        });
 
-    // Initial evaluation for all sections
-    sections.forEach(sec => evaluateConditionsInSection(sec));
-    showSection(0);
-});
+        // Initial display
+        sections.forEach(sec => evaluateConditionsInSection(sec));
+        showSection(0);
+    })();
 </script>
 {% endblock %}

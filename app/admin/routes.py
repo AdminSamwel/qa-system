@@ -1,41 +1,70 @@
-from app.models import SupportMessage 
 import csv, io
 from flask import render_template, redirect, url_for, flash, request, Response
 from flask_login import login_required, current_user
 from app import db
 from app.admin import bp
-from app.models import User, Course, Enrollment, Department, Programme, Campus
+from app.models import User, Course, Enrollment, Department, Programme, Campus, SupportMessage, Form
 from app.forms import (UserCreationForm, EditUserForm, DepartmentForm, ProgrammeForm,
                        CourseForm, CampusForm)
 from sqlalchemy import or_
 
+# ---------- Permission helpers ----------
+
+def is_superadmin():
+    """True for superadmin role, or legacy admin with no campus (head office)."""
+    return current_user.role == 'superadmin' or (
+        current_user.role == 'admin' and current_user.campus_id is None
+    )
+
 def admin_required():
-    if current_user.role != 'admin':
+    if current_user.role not in ('admin', 'superadmin'):
         flash('Access denied.', 'danger')
         return False
     return True
 
 def headoffice_required():
-    if current_user.role != 'admin' or current_user.campus_id is not None:
+    if not is_superadmin():
         flash('Only head‑office admin can perform this action.', 'danger')
         return False
     return True
 
+def can_view_setup():
+    if current_user.role in ('admin', 'superadmin', 'qa_officer'):
+        return True
+    flash('Access denied.', 'danger')
+    return False
+
 def get_user_scope():
-    if current_user.campus_id is None:
+    if is_superadmin():
         return User.query
     return User.query.filter_by(campus_id=current_user.campus_id)
 
 def get_course_scope():
-    if current_user.campus_id is None:
+    if is_superadmin():
         return Course.query
     return Course.query.filter_by(campus_id=current_user.campus_id)
 
-# ---------- CAMPUS MANAGEMENT ----------
+def _allowed_roles_for_creator():
+    """Return (allowed_roles, campus_choices) based on who is creating a user."""
+    if is_superadmin():
+        roles = ['superadmin', 'admin', 'qa_officer', 'director', 'ceo', 'lecturer', 'student']
+        campuses = [(0, '-- None (Head Office) --')] + [
+            (c.id, c.name) for c in Campus.query.order_by('name')
+        ]
+    elif current_user.campus_id is not None:
+        roles = ['qa_officer', 'director', 'lecturer', 'student']
+        campuses = [(current_user.campus_id,
+                     db.session.get(Campus, current_user.campus_id).name)]
+    else:
+        roles = ['admin', 'qa_officer', 'director', 'ceo', 'lecturer', 'student']
+        campuses = [(c.id, c.name) for c in Campus.query.order_by('name')]
+    return roles, campuses
+
+# ========== CAMPUSES ==========
 @bp.route('/campuses')
 @login_required
 def list_campuses():
-    if not admin_required():
+    if not can_view_setup():
         return redirect(url_for('main.index'))
     campuses = Campus.query.order_by(Campus.name).all()
     return render_template('admin/campuses.html', campuses=campuses)
@@ -47,7 +76,6 @@ def add_campus():
         return redirect(url_for('admin.list_campuses'))
     form = CampusForm()
     if form.validate_on_submit():
-        # The custom validator will catch duplicates, but we rely on it
         campus = Campus(name=form.name.data, location=form.location.data)
         db.session.add(campus)
         db.session.commit()
@@ -60,10 +88,9 @@ def add_campus():
 def edit_campus(campus_id):
     if not headoffice_required():
         return redirect(url_for('admin.list_campuses'))
-    campus = Campus.query.get_or_404(campus_id)
+    campus = db.get_or_404(Campus, campus_id)
     form = CampusForm(obj=campus)
     if form.validate_on_submit():
-        # Manually check for duplicate name (excluding the current campus)
         existing = Campus.query.filter(Campus.name == form.name.data, Campus.id != campus_id).first()
         if existing:
             flash('A campus with this name already exists.', 'danger')
@@ -80,17 +107,17 @@ def edit_campus(campus_id):
 def delete_campus(campus_id):
     if not headoffice_required():
         return redirect(url_for('admin.list_campuses'))
-    campus = Campus.query.get_or_404(campus_id)
+    campus = db.get_or_404(Campus, campus_id)
     db.session.delete(campus)
     db.session.commit()
     flash('Campus deleted.', 'success')
     return redirect(url_for('admin.list_campuses'))
 
-# ---------- DEPARTMENT MANAGEMENT ----------
+# ========== DEPARTMENTS ==========
 @bp.route('/departments')
 @login_required
 def list_departments():
-    if not admin_required():
+    if not can_view_setup():
         return redirect(url_for('main.index'))
     departments = Department.query.order_by(Department.name).all()
     return render_template('admin/departments.html', departments=departments)
@@ -98,8 +125,8 @@ def list_departments():
 @bp.route('/departments/add', methods=['GET', 'POST'])
 @login_required
 def add_department():
-    if not admin_required():
-        return redirect(url_for('main.index'))
+    if not headoffice_required():
+        return redirect(url_for('admin.list_departments'))
     form = DepartmentForm()
     if form.validate_on_submit():
         dept = Department(name=form.name.data)
@@ -112,9 +139,9 @@ def add_department():
 @bp.route('/departments/<int:dept_id>/edit', methods=['GET', 'POST'])
 @login_required
 def edit_department(dept_id):
-    if not admin_required():
-        return redirect(url_for('main.index'))
-    dept = Department.query.get_or_404(dept_id)
+    if not headoffice_required():
+        return redirect(url_for('admin.list_departments'))
+    dept = db.get_or_404(Department, dept_id)
     form = DepartmentForm(obj=dept)
     if form.validate_on_submit():
         dept.name = form.name.data
@@ -126,19 +153,19 @@ def edit_department(dept_id):
 @bp.route('/departments/<int:dept_id>/delete', methods=['POST'])
 @login_required
 def delete_department(dept_id):
-    if not admin_required():
-        return redirect(url_for('main.index'))
-    dept = Department.query.get_or_404(dept_id)
+    if not headoffice_required():
+        return redirect(url_for('admin.list_departments'))
+    dept = db.get_or_404(Department, dept_id)
     db.session.delete(dept)
     db.session.commit()
     flash('Department deleted.', 'success')
     return redirect(url_for('admin.list_departments'))
 
-# ---------- PROGRAMME MANAGEMENT ----------
+# ========== PROGRAMMES ==========
 @bp.route('/programmes')
 @login_required
 def list_programmes():
-    if not admin_required():
+    if not can_view_setup():
         return redirect(url_for('main.index'))
     programmes = Programme.query.order_by(Programme.name).all()
     return render_template('admin/programmes.html', programmes=programmes)
@@ -146,8 +173,8 @@ def list_programmes():
 @bp.route('/programmes/add', methods=['GET', 'POST'])
 @login_required
 def add_programme():
-    if not admin_required():
-        return redirect(url_for('main.index'))
+    if not headoffice_required():
+        return redirect(url_for('admin.list_programmes'))
     form = ProgrammeForm()
     form.department_id.choices = [(d.id, d.name) for d in Department.query.order_by('name')]
     if form.validate_on_submit():
@@ -161,9 +188,9 @@ def add_programme():
 @bp.route('/programmes/<int:prog_id>/edit', methods=['GET', 'POST'])
 @login_required
 def edit_programme(prog_id):
-    if not admin_required():
-        return redirect(url_for('main.index'))
-    prog = Programme.query.get_or_404(prog_id)
+    if not headoffice_required():
+        return redirect(url_for('admin.list_programmes'))
+    prog = db.get_or_404(Programme, prog_id)
     form = ProgrammeForm(obj=prog)
     form.department_id.choices = [(d.id, d.name) for d in Department.query.order_by('name')]
     if form.validate_on_submit():
@@ -177,15 +204,15 @@ def edit_programme(prog_id):
 @bp.route('/programmes/<int:prog_id>/delete', methods=['POST'])
 @login_required
 def delete_programme(prog_id):
-    if not admin_required():
-        return redirect(url_for('main.index'))
-    prog = Programme.query.get_or_404(prog_id)
+    if not headoffice_required():
+        return redirect(url_for('admin.list_programmes'))
+    prog = db.get_or_404(Programme, prog_id)
     db.session.delete(prog)
     db.session.commit()
     flash('Programme deleted.', 'success')
     return redirect(url_for('admin.list_programmes'))
 
-# ---------- USER MANAGEMENT (campus scoped) ----------
+# ========== USER MANAGEMENT ==========
 @bp.route('/users')
 @login_required
 def user_list():
@@ -207,24 +234,31 @@ def user_list():
 def add_user():
     if not admin_required():
         return redirect(url_for('main.index'))
-    form = UserCreationForm()
-    if current_user.campus_id is None:
-        form.campus_id.choices = [(c.id, c.name) for c in Campus.query.order_by('name')]
-    else:
-        form.campus_id.choices = [(current_user.campus_id, Campus.query.get(current_user.campus_id).name)]
+
+    allowed_roles, campus_choices = _allowed_roles_for_creator()
+    form = UserCreationForm(allowed_roles=allowed_roles)
+    form.campus_id.choices = campus_choices
+
     if form.validate_on_submit():
+        if current_user.campus_id is not None:
+            campus_id = current_user.campus_id
+        else:
+            # 0 = Head Office (no campus)
+            campus_id = form.campus_id.data if form.campus_id.data != 0 else None
+
         user = User(
             username=form.username.data,
             email=form.email.data,
             full_name=form.full_name.data,
             role=form.role.data,
-            campus_id=form.campus_id.data
+            campus_id=campus_id
         )
         user.set_password(form.password.data)
         db.session.add(user)
         db.session.commit()
         flash(f'User {user.username} created.', 'success')
         return redirect(url_for('admin.user_list'))
+
     return render_template('admin/add_user.html', form=form)
 
 @bp.route('/users/upload', methods=['GET', 'POST'])
@@ -251,24 +285,31 @@ def upload_users():
             if not all([username, email, full_name, role, password, campus_id]):
                 errors.append(f'Row {row_num}: missing fields')
                 continue
-            if role not in ['student', 'lecturer', 'qa_officer', 'admin']:
-                errors.append(f'Row {row_num}: invalid role')
+
+            allowed, _ = _allowed_roles_for_creator()
+            if role not in allowed:
+                errors.append(f'Row {row_num}: role "{role}" not permitted for your account')
                 continue
+
             try:
                 campus_id_int = int(campus_id)
             except ValueError:
                 errors.append(f'Row {row_num}: invalid campus_id')
                 continue
+
             if current_user.campus_id is not None and campus_id_int != current_user.campus_id:
                 errors.append(f'Row {row_num}: cannot create user in another campus')
                 continue
+
             if User.query.filter((User.username == username) | (User.email == email)).first():
                 errors.append(f'Row {row_num}: username/email exists')
                 continue
+
             user = User(username=username, email=email, full_name=full_name, role=role, campus_id=campus_id_int)
             user.set_password(password)
             db.session.add(user)
             created += 1
+
         db.session.commit()
         flash(f'{created} users created. {len(errors)} errors.', 'info')
         for err in errors:
@@ -295,16 +336,24 @@ def edit_user(user_id):
     if not admin_required():
         return redirect(url_for('main.index'))
     user = get_user_scope().filter_by(id=user_id).first_or_404()
-    form = EditUserForm(original_username=user.username, obj=user)
-    if current_user.campus_id is None:
-        form.campus_id.choices = [(c.id, c.name) for c in Campus.query.order_by('name')]
-    else:
-        form.campus_id.choices = [(current_user.campus_id, Campus.query.get(current_user.campus_id).name)]
+
+    allowed_roles, campus_choices = _allowed_roles_for_creator()
+    form = EditUserForm(original_username=user.username, obj=user, allowed_roles=allowed_roles)
+    form.campus_id.choices = campus_choices
+
     if form.validate_on_submit():
+        if form.role.data not in allowed_roles:
+            flash('You cannot assign that role.', 'danger')
+            return redirect(url_for('admin.edit_user', user_id=user_id))
+
         user.email = form.email.data
         user.full_name = form.full_name.data
         user.role = form.role.data
-        user.campus_id = form.campus_id.data
+        if current_user.campus_id is not None:
+            user.campus_id = current_user.campus_id
+        else:
+            campus_val = form.campus_id.data
+            user.campus_id = campus_val if campus_val != 0 else None
         if form.password.data:
             user.set_password(form.password.data)
         db.session.commit()
@@ -335,15 +384,49 @@ def delete_user(user_id):
         db.session.delete(user)
         db.session.commit()
         flash('User deleted.', 'success')
+
+    redirect_to = request.form.get('redirect_to')
+    if redirect_to == 'user_assignments':
+        return redirect(url_for('admin.list_user_assignments'))
     return redirect(url_for('admin.user_list'))
 
-# ---------- COURSE MANAGEMENT (campus scoped) ----------
+# ========== USER‑CAMPUS ASSIGNMENT ==========
+@bp.route('/user_assignments')
+@login_required
+def list_user_assignments():
+    if not headoffice_required():
+        return redirect(url_for('admin.user_list'))
+    users = User.query.order_by(User.username).all()
+    campuses = Campus.query.order_by(Campus.name).all()
+    return render_template('admin/user_assignments.html', users=users, campuses=campuses)
+
+@bp.route('/user_assignments/update', methods=['POST'])
+@login_required
+def update_user_campus():
+    if not headoffice_required():
+        flash('Only head‑office admin can assign campuses.', 'danger')
+        return redirect(url_for('admin.list_user_assignments'))
+    user_id = request.form.get('user_id', type=int)
+    campus_id = request.form.get('campus_id', type=int)
+    if not user_id or not campus_id:
+        flash('Please select both user and campus.', 'warning')
+        return redirect(url_for('admin.list_user_assignments'))
+    user = db.get_or_404(User, user_id)
+    campus = db.get_or_404(Campus, campus_id)
+    old_campus = user.campus.name if user.campus else 'None'
+    user.campus_id = campus.id
+    db.session.commit()
+    flash(f'{user.full_name} moved from {old_campus} to {campus.name}.', 'success')
+    return redirect(url_for('admin.list_user_assignments'))
+
+# ========== COURSE MANAGEMENT ==========
 @bp.route('/courses')
 @login_required
 def list_courses():
-    if not admin_required():
+    if not can_view_setup() and not admin_required():
         return redirect(url_for('main.index'))
-    courses = get_course_scope().order_by(Course.code).all()
+    courses = get_course_scope() if current_user.role == 'admin' else Course.query
+    courses = courses.order_by(Course.code).all()
     return render_template('admin/courses.html', courses=courses)
 
 @bp.route('/courses/add', methods=['GET', 'POST'])
@@ -355,13 +438,15 @@ def add_course():
     if current_user.campus_id is None:
         form.campus_id.choices = [(c.id, c.name) for c in Campus.query.order_by('name')]
     else:
-        form.campus_id.choices = [(current_user.campus_id, Campus.query.get(current_user.campus_id).name)]
+        form.campus_id.choices = [(current_user.campus_id, db.session.get(Campus, current_user.campus_id).name)]
     form.department_id.choices = [(d.id, d.name) for d in Department.query.order_by('name')]
     form.programme_id.choices = [(p.id, p.name) for p in Programme.query.order_by('name')]
     lecturers = User.query.filter_by(role='lecturer')
     if current_user.campus_id is not None:
         lecturers = lecturers.filter_by(campus_id=current_user.campus_id)
     form.lecturer_id.choices = [(l.id, l.full_name) for l in lecturers.all()]
+    form.form_id.choices = [(f.id, f.title) for f in Form.query.filter_by(is_active=True).order_by(Form.title).all()]
+
     if form.validate_on_submit():
         course = Course(
             code=form.code.data,
@@ -373,13 +458,17 @@ def add_course():
             level=form.level.data or None,
             semester=form.semester.data or None,
             academic_year=form.academic_year.data or None,
-            lecturer_id=form.lecturer_id.data
+            lecturer_id=form.lecturer_id.data,
+            form_id=form.form_id.data or None
         )
+        if form.course_type.data == 'short':
+            import uuid
+            course.public_token = str(uuid.uuid4())
         db.session.add(course)
         db.session.commit()
-        flash('Course added.', 'success')
+        flash('Course added successfully.', 'success')
         return redirect(url_for('admin.list_courses'))
-    return render_template('admin/course_form.html', form=form, title='Add Course')
+    return render_template('admin/course_form.html', form=form, title='Add Module')
 
 @bp.route('/courses/<int:course_id>/edit', methods=['GET', 'POST'])
 @login_required
@@ -391,13 +480,15 @@ def edit_course(course_id):
     if current_user.campus_id is None:
         form.campus_id.choices = [(c.id, c.name) for c in Campus.query.order_by('name')]
     else:
-        form.campus_id.choices = [(current_user.campus_id, Campus.query.get(current_user.campus_id).name)]
+        form.campus_id.choices = [(current_user.campus_id, db.session.get(Campus, current_user.campus_id).name)]
     form.department_id.choices = [(d.id, d.name) for d in Department.query.order_by('name')]
     form.programme_id.choices = [(p.id, p.name) for p in Programme.query.order_by('name')]
     lecturers = User.query.filter_by(role='lecturer')
     if current_user.campus_id is not None:
         lecturers = lecturers.filter_by(campus_id=current_user.campus_id)
     form.lecturer_id.choices = [(l.id, l.full_name) for l in lecturers.all()]
+    form.form_id.choices = [(f.id, f.title) for f in Form.query.filter_by(is_active=True).order_by(Form.title).all()]
+
     if form.validate_on_submit():
         course.code = form.code.data
         course.name = form.name.data
@@ -409,10 +500,14 @@ def edit_course(course_id):
         course.semester = form.semester.data or None
         course.academic_year = form.academic_year.data or None
         course.lecturer_id = form.lecturer_id.data
+        course.form_id = form.form_id.data or None
+        if form.course_type.data == 'short' and not course.public_token:
+            import uuid
+            course.public_token = str(uuid.uuid4())
         db.session.commit()
         flash('Course updated.', 'success')
         return redirect(url_for('admin.list_courses'))
-    return render_template('admin/course_form.html', form=form, title='Edit Course')
+    return render_template('admin/course_form.html', form=form, title='Edit Module')
 
 @bp.route('/courses/<int:course_id>/delete', methods=['POST'])
 @login_required
@@ -425,7 +520,7 @@ def delete_course(course_id):
     flash('Course deleted.', 'success')
     return redirect(url_for('admin.list_courses'))
 
-# ---------- ENROLLMENTS (campus scoped) ----------
+# ========== ENROLLMENTS ==========
 @bp.route('/enrollments')
 @login_required
 def list_enrollments():
@@ -467,7 +562,7 @@ def enroll_student():
 def remove_enrollment(enrollment_id):
     if not admin_required():
         return redirect(url_for('main.index'))
-    enrollment = Enrollment.query.get_or_404(enrollment_id)
+    enrollment = db.get_or_404(Enrollment, enrollment_id)
     if current_user.campus_id and enrollment.course.campus_id != current_user.campus_id:
         flash('Access denied.', 'danger')
         return redirect(url_for('admin.list_enrollments'))
@@ -475,6 +570,8 @@ def remove_enrollment(enrollment_id):
     db.session.commit()
     flash('Removed.', 'info')
     return redirect(url_for('admin.list_enrollments'))
+
+# ========== SUPPORT MESSAGES ==========
 @bp.route('/messages')
 @login_required
 def list_messages():
@@ -488,7 +585,7 @@ def list_messages():
 def mark_read(msg_id):
     if not admin_required():
         return redirect(url_for('main.index'))
-    msg = SupportMessage.query.get_or_404(msg_id)
+    msg = db.get_or_404(SupportMessage, msg_id)
     msg.is_read = True
     db.session.commit()
     return redirect(url_for('admin.list_messages'))

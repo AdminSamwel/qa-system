@@ -1,93 +1,190 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="sw" data-bs-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QA System | Tanzanian College</title>
-    <!-- Bootstrap 5 CSS -->
+    <title>TPSC QA System | Chuo cha Utumishi wa Umma</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <!-- Plotly for charts -->
+    <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-    <!-- Bootstrap 5 JS (for navbar toggler) -->
     <script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </head>
 <body>
-    <!-- Skip to content link for keyboard users -->
     <a href="#mainContent" class="skip-link">Skip to main content</a>
 
-    <!-- Top bar with contact / quick sharing links -->
-    <div class="top-bar bg-dark text-white py-1">
-        <div class="container d-flex justify-content-between">
-            <div>
-                <i class="fas fa-phone-alt me-2"></i> +255 22 212 3456
-                <i class="fas fa-envelope ms-3 me-2"></i> qa@college.ac.tz
+    <!-- Top Bar -->
+    <div class="top-bar py-1">
+        <div class="container d-flex justify-content-between align-items-center">
+            <div class="top-bar-contact">
+                <i class="fas fa-phone-alt me-1"></i> +255 22 212 3456
+                <span class="d-none d-sm-inline">
+                    <i class="fas fa-envelope ms-3 me-1"></i> qa@tpsc.ac.tz
+                </span>
             </div>
-            <div>
-                <!-- WhatsApp share link -->
-                <a href="https://wa.me/?text=Check%20out%20Tanzanian%20College%20QA%20System" class="text-white me-3" target="_blank" rel="noopener" title="Share via WhatsApp">
-                    <i class="fab fa-whatsapp"></i>
-                </a>
-                <!-- Email share link -->
-                <a href="mailto:?subject=Tanzanian%20College%20QA%20System&body=I%20wanted%20to%20share%20this%20QA%20system%20with%20you." class="text-white" target="_blank" rel="noopener" title="Share via Email">
-                    <i class="fas fa-envelope"></i>
-                </a>
+            <div class="d-flex align-items-center gap-2">
+                <!-- Language Switcher -->
+                <div class="lang-switcher d-flex align-items-center">
+                    <button class="lang-btn" data-lang-btn="sw" onclick="setLang('sw')" title="Kiswahili">
+                        <img src="https://flagcdn.com/16x12/tz.png" width="16" height="12" alt="TZ"> SW
+                    </button>
+                    <span class="lang-divider">|</span>
+                    <button class="lang-btn" data-lang-btn="en" onclick="setLang('en')" title="English">
+                        <img src="https://flagcdn.com/16x12/gb.png" width="16" height="12" alt="GB"> EN
+                    </button>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Main Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary py-3" role="navigation" aria-label="Main navigation">
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark main-navbar py-2" role="navigation" aria-label="Main navigation">
         <div class="container">
-            <a class="navbar-brand fw-bold" href="{{ url_for('main.index') }}">
-                <i class="fas fa-check-circle me-2"></i>College QA System
+            <a class="navbar-brand d-flex align-items-center gap-2" href="{{ url_for('main.index') }}">
+                <div class="navbar-logo-wrap">
+                    <img src="{{ url_for('static', filename='images/tpsc_logo.jpg') }}"
+                         alt="TPSC Logo" class="navbar-logo" onerror="this.style.display='none'">
+                </div>
+                <div class="navbar-brand-text">
+                    <span class="brand-title" data-i18n="nav_brand_title">Chuo cha Utumishi wa Umma</span>
+                    <small class="brand-sub d-block" data-i18n="nav_brand_sub">Mfumo wa Uhakika wa Ubora</small>
+                </div>
             </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain" 
+            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain"
                     aria-controls="navbarMain" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarMain">
                 <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-center">
                     {% if current_user.is_authenticated %}
-                        <li class="nav-item"><a class="nav-link" href="{{ url_for('main.index') }}"><i class="fas fa-home me-1"></i>Home</a></li>
-                        <li class="nav-item"><a class="nav-link" href="{{ url_for('evaluation.list_courses') }}"><i class="fas fa-clipboard-list me-1"></i>Evaluations</a></li>
-                        <li class="nav-item"><a class="nav-link" href="{{ url_for('reports.dashboard') }}"><i class="fas fa-chart-bar me-1"></i>Reports</a></li>
-                        <li class="nav-item"><a class="nav-link" href="{{ url_for('main.help_page') }}"><i class="fas fa-question-circle me-1"></i>Help</a></li>
-                        {% if current_user.role in ['qa_officer', 'admin'] %}
-                            <li class="nav-item"><a class="nav-link" href="{{ url_for('forms_manager.list_forms') }}"><i class="fas fa-file-alt me-1"></i>Forms</a></li>
-                        {% endif %}
-                        {% if current_user.role in ['admin', 'qa_officer'] %}
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
-                                    <i class="fas fa-cogs me-1"></i>Setup
-                                </a>
-                                <ul class="dropdown-menu">
-                                    <li><a class="dropdown-item" href="{{ url_for('admin.list_campuses') }}">Campuses</a></li>
-                                    <li><a class="dropdown-item" href="{{ url_for('admin.list_departments') }}">Departments</a></li>
-                                    <li><a class="dropdown-item" href="{{ url_for('admin.list_programmes') }}">Programmes</a></li>
-                                    <li><a class="dropdown-item" href="{{ url_for('admin.list_courses') }}">Modules</a></li>
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li><a class="dropdown-item" href="{{ url_for('admin.user_list') }}">Users</a></li>
-                                    <li><a class="dropdown-item" href="{{ url_for('admin.list_enrollments') }}">Enrollments</a></li>
-                                    <li><a class="dropdown-item" href="{{ url_for('admin.list_messages') }}">Messages</a></li>
-                                </ul>
-                            </li>
-                        {% endif %}
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
-                                <i class="fas fa-user-circle me-1"></i>{{ current_user.full_name }} ({{ current_user.role|capitalize }})
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('main.index') }}">
+                                <i class="fas fa-home me-1"></i><span data-i18n="nav_home">Nyumbani</span>
                             </a>
-                            <ul class="dropdown-menu dropdown-menu-end">
-                                <li><a class="dropdown-item" href="{{ url_for('main.profile') }}"><i class="fas fa-user-edit me-2"></i>Profile</a></li>
+                        </li>
+
+                        {% if current_user.role not in ['director', 'ceo'] %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('evaluation.list_courses') }}">
+                                <i class="fas fa-clipboard-list me-1"></i><span data-i18n="nav_eval">Tathmini</span>
+                            </a>
+                        </li>
+                        {% endif %}
+
+                        {% if current_user.role == 'director' %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('reports.director_dashboard') }}">
+                                <i class="fas fa-chart-bar me-1"></i><span data-i18n="nav_campus_reports">Ripoti za Kampasi</span>
+                            </a>
+                        </li>
+                        {% elif current_user.role == 'ceo' %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('reports.ceo_dashboard') }}">
+                                <i class="fas fa-globe me-1"></i><span data-i18n="nav_institution">Taasisi Nzima</span>
+                            </a>
+                        </li>
+                        {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('reports.dashboard') }}">
+                                <i class="fas fa-chart-bar me-1"></i><span data-i18n="nav_reports">Ripoti</span>
+                            </a>
+                        </li>
+                        {% endif %}
+
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('main.help_page') }}">
+                                <i class="fas fa-question-circle me-1"></i><span data-i18n="nav_help">Msaada</span>
+                            </a>
+                        </li>
+
+                        {% if current_user.role in ['qa_officer', 'admin', 'superadmin'] %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('forms_manager.list_forms') }}">
+                                <i class="fas fa-file-alt me-1"></i><span data-i18n="nav_forms">Fomu</span>
+                            </a>
+                        </li>
+                        {% endif %}
+
+                        {% if current_user.role in ['admin', 'superadmin', 'qa_officer'] %}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                                <i class="fas fa-cogs me-1"></i><span data-i18n="nav_setup">Mipangilio</span>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-navy">
+                                <li><a class="dropdown-item" href="{{ url_for('admin.list_campuses') }}">
+                                    <i class="fas fa-building me-2 text-primary"></i><span data-i18n="menu_campuses">Kampasi</span>
+                                </a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('admin.list_departments') }}">
+                                    <i class="fas fa-sitemap me-2 text-primary"></i><span data-i18n="menu_departments">Idara</span>
+                                </a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('admin.list_programmes') }}">
+                                    <i class="fas fa-graduation-cap me-2 text-primary"></i><span data-i18n="menu_programmes">Programu</span>
+                                </a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('admin.list_courses') }}">
+                                    <i class="fas fa-book me-2 text-primary"></i><span data-i18n="menu_modules">Moduli</span>
+                                </a></li>
                                 <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                                {% if current_user.role in ['admin', 'superadmin'] %}
+                                <li><a class="dropdown-item" href="{{ url_for('admin.user_list') }}">
+                                    <i class="fas fa-users me-2 text-primary"></i><span data-i18n="menu_users">Watumiaji</span>
+                                </a></li>
+                                {% if current_user.campus_id is none %}
+                                <li><a class="dropdown-item" href="{{ url_for('admin.list_user_assignments') }}">
+                                    <i class="fas fa-user-tag me-2 text-primary"></i><span data-i18n="menu_assignments">Mgawanyo wa Watumiaji</span>
+                                </a></li>
+                                {% endif %}
+                                <li><a class="dropdown-item" href="{{ url_for('admin.list_enrollments') }}">
+                                    <i class="fas fa-user-check me-2 text-primary"></i><span data-i18n="menu_enrollments">Usajili</span>
+                                </a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('admin.list_messages') }}">
+                                    <i class="fas fa-envelope me-2 text-primary"></i><span data-i18n="menu_messages">Ujumbe</span>
+                                </a></li>
+                                {% endif %}
+                            </ul>
+                        </li>
+                        {% endif %}
+
+                        <li class="nav-item">
+                            <button id="themeToggle" class="btn btn-nav-icon ms-1" title="Switch theme">
+                                <i class="fas fa-moon"></i>
+                            </button>
+                        </li>
+
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle user-menu-btn" href="#" id="userDropdown"
+                               role="button" data-bs-toggle="dropdown">
+                                <span class="user-avatar-sm">{{ current_user.full_name[0]|upper }}</span>
+                                <span class="d-none d-lg-inline ms-1">{{ current_user.full_name.split()[0] }}</span>
+                                <span class="role-badge-sm d-none d-lg-inline">{{ current_user.role|upper }}</span>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end dropdown-menu-navy">
+                                <li class="dropdown-header-custom">
+                                    <div class="user-info-header">
+                                        <div class="user-avatar-lg">{{ current_user.full_name[0]|upper }}</div>
+                                        <div>
+                                            <div class="fw-bold">{{ current_user.full_name }}</div>
+                                            <small class="text-muted">{{ current_user.email }}</small>
+                                            <div><span class="badge bg-primary">{{ current_user.role|capitalize }}</span></div>
+                                        </div>
+                                    </div>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{{ url_for('main.profile') }}">
+                                    <i class="fas fa-user-edit me-2 text-primary"></i><span data-i18n="menu_profile">Wasifu Wangu</span>
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item text-danger" href="{{ url_for('auth.logout') }}">
+                                    <i class="fas fa-sign-out-alt me-2"></i><span data-i18n="menu_logout">Toka</span>
+                                </a></li>
                             </ul>
                         </li>
                     {% else %}
-                        <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.login') }}">Login</a></li>
+                        <li class="nav-item">
+                            <a class="nav-link nav-login-btn" href="{{ url_for('auth.login') }}">
+                                <i class="fas fa-sign-in-alt me-1"></i><span data-i18n="nav_login">Ingia</span>
+                            </a>
+                        </li>
                     {% endif %}
                 </ul>
             </div>
@@ -99,7 +196,11 @@
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, msg in messages %}
-                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    <div class="alert alert-{{ category }} alert-dismissible fade show alert-styled" role="alert">
+                        {% if category == 'success' %}<i class="fas fa-check-circle me-2"></i>
+                        {% elif category == 'danger' %}<i class="fas fa-exclamation-circle me-2"></i>
+                        {% elif category == 'warning' %}<i class="fas fa-exclamation-triangle me-2"></i>
+                        {% else %}<i class="fas fa-info-circle me-2"></i>{% endif %}
                         {{ msg }}
                         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>
@@ -108,39 +209,50 @@
         {% endwith %}
     </div>
 
-    <!-- Main Content -->
     <main class="container my-4" id="mainContent" tabindex="-1">
         {% block content %}{% endblock %}
     </main>
 
     <!-- Footer -->
-    <footer class="bg-dark text-white py-4 mt-5">
-        <div class="container">
-            <div class="row">
-                <div class="col-md-6">
-                    <h5 class="text-accent">Tanzanian College QA System</h5>
-                    <p class="small">Ensuring quality education through continuous improvement.</p>
-                </div>
-                <div class="col-md-3">
-                    <h6>Quick Links</h6>
-                    <ul class="list-unstyled">
-                        <li><a href="{{ url_for('main.index') }}" class="text-white-50">Home</a></li>
-                        <li><a href="{{ url_for('evaluation.list_courses') }}" class="text-white-50">Evaluations</a></li>
-                        <li><a href="{{ url_for('reports.dashboard') }}" class="text-white-50">Reports</a></li>
-                    </ul>
-                </div>
-                <div class="col-md-3">
-                    <h6>Contact</h6>
-                    <ul class="list-unstyled text-white-50">
-                        <li><i class="fas fa-map-marker-alt me-2"></i> Dar es Salaam, Tanzania</li>
-                        <li><i class="fas fa-phone-alt me-2"></i> +255 22 212 3456</li>
-                        <li><i class="fas fa-envelope me-2"></i> qa@college.ac.tz</li>
-                    </ul>
+    <footer class="site-footer mt-5">
+        <div class="footer-top">
+            <div class="container">
+                <div class="row g-4">
+                    <div class="col-md-5">
+                        <div class="d-flex align-items-center gap-3 mb-3">
+                            <img src="{{ url_for('static', filename='images/tpsc_logo.jpg') }}"
+                                 alt="TPSC Logo" class="footer-logo" onerror="this.style.display='none'">
+                            <div>
+                                <h5 class="mb-0 text-white fw-bold" data-i18n="footer_title">Chuo cha Utumishi wa Umma</h5>
+                                <small class="text-white-50" data-i18n="footer_subtitle">Mfumo wa Uhakika wa Ubora</small>
+                            </div>
+                        </div>
+                        <p class="text-white-50 small" data-i18n="footer_desc">
+                            Kuhakikisha ubora wa elimu kupitia tathmini za kina na mfumo wa NACTVET/NAQS.
+                        </p>
+                    </div>
+                    <div class="col-md-3 offset-md-1">
+                        <h6 class="text-white fw-bold mb-3 footer-heading" data-i18n="footer_links">Viungo vya Haraka</h6>
+                        <ul class="list-unstyled footer-links">
+                            <li><a href="{{ url_for('main.index') }}" data-i18n="nav_home">Nyumbani</a></li>
+                            <li><a href="{{ url_for('evaluation.list_courses') }}" data-i18n="nav_eval">Tathmini</a></li>
+                            <li><a href="{{ url_for('reports.dashboard') }}" data-i18n="nav_reports">Ripoti</a></li>
+                        </ul>
+                    </div>
+                    <div class="col-md-3">
+                        <h6 class="text-white fw-bold mb-3 footer-heading" data-i18n="footer_contact">Mawasiliano</h6>
+                        <ul class="list-unstyled footer-contact-list">
+                            <li><i class="fas fa-map-marker-alt me-2"></i>Dar es Salaam, Tanzania</li>
+                            <li><i class="fas fa-phone-alt me-2"></i>+255 22 212 3456</li>
+                            <li><i class="fas fa-envelope me-2"></i>qa@tpsc.ac.tz</li>
+                        </ul>
+                    </div>
                 </div>
             </div>
-            <hr class="bg-secondary">
-            <div class="text-center small">
-                &copy; 2026 Tanzanian College. All rights reserved.
+        </div>
+        <div class="footer-bottom">
+            <div class="container text-center">
+                <small>&copy; 2026 Chuo cha Utumishi wa Umma. <span data-i18n="footer_rights">Haki zote zimehifadhiwa.</span></small>
             </div>
         </div>
     </footer>
@@ -154,91 +266,73 @@
             <h6>Accessibility Tools</h6>
             <div class="mb-3">
                 <label for="textSizeSlider" class="form-label">Text Size: <span id="textSizeValue">100%</span></label>
-                <input type="range" class="form-range" id="textSizeSlider" min="100" max="200" value="100" step="10" aria-label="Adjust text size">
+                <input type="range" class="form-range" id="textSizeSlider" min="100" max="200" value="100" step="10">
             </div>
             <button id="readPageBtn" class="btn btn-primary w-100 mb-2"><i class="fas fa-play me-1"></i> Read Page</button>
-            <button id="stopReadBtn" class="btn btn-secondary w-100" style="display:none;"><i class="fas fa-stop me-1"></i> Stop Reading</button>
+            <button id="stopReadBtn" class="btn btn-secondary w-100" style="display:none;"><i class="fas fa-stop me-1"></i> Stop</button>
         </div>
     </div>
 
     <script>
-        // Accessibility Panel functionality
-        (function() {
-            const panel = document.getElementById('accessibilityPanel');
-            const toggle = document.getElementById('panelToggle');
-            const content = document.getElementById('panelContent');
-            const textSizeSlider = document.getElementById('textSizeSlider');
-            const textSizeValue = document.getElementById('textSizeValue');
-            const readPageBtn = document.getElementById('readPageBtn');
-            const stopReadBtn = document.getElementById('stopReadBtn');
-            const mainContent = document.getElementById('mainContent');
+    // ===== Theme Toggle =====
+    (function() {
+        const html = document.documentElement;
+        const themeToggle = document.getElementById('themeToggle');
+        if (!themeToggle) return;
+        const icon = themeToggle.querySelector('i');
+        function isNightTime() { const h = new Date().getHours(); return h >= 18 || h < 6; }
+        function applyTheme(theme) {
+            if (theme === 'dark') { html.setAttribute('data-bs-theme', 'dark'); icon.className = 'fas fa-sun'; }
+            else { html.setAttribute('data-bs-theme', 'light'); icon.className = 'fas fa-moon'; }
+        }
+        const saved = localStorage.getItem('theme');
+        applyTheme(saved || (isNightTime() ? 'dark' : 'light'));
+        themeToggle.addEventListener('click', function() {
+            const cur = html.getAttribute('data-bs-theme');
+            const next = cur === 'dark' ? 'light' : 'dark';
+            applyTheme(next);
+            localStorage.setItem('theme', next);
+        });
+        setInterval(function() {
+            if (!localStorage.getItem('theme')) applyTheme(isNightTime() ? 'dark' : 'light');
+        }, 60000);
+    })();
 
-            // Show/hide panel
-            toggle.addEventListener('click', function() {
-                const isOpen = content.style.display === 'block';
-                content.style.display = isOpen ? 'none' : 'block';
-                panel.setAttribute('aria-hidden', isOpen);
-                if (!isOpen) document.getElementById('textSizeSlider').focus();
-            });
-
-            // Text size slider
-            const savedSize = localStorage.getItem('textSize') || 100;
-            textSizeSlider.value = savedSize;
-            applyTextSize(savedSize);
-            textSizeSlider.addEventListener('input', function() {
-                const size = this.value;
-                textSizeValue.textContent = size + '%';
-                applyTextSize(size);
-                localStorage.setItem('textSize', size);
-            });
-
-            function applyTextSize(percentage) {
-                const scale = percentage / 100;
-                document.documentElement.style.fontSize = (16 * scale) + 'px'; // base 16px
-            }
-
-            // Read aloud using Web Speech API
-            let synth = window.speechSynthesis;
-            let utterance = null;
-
-            readPageBtn.addEventListener('click', function() {
-                if (synth.speaking) {
-                    synth.cancel();
-                }
-                const text = mainContent.innerText.trim();
-                if (!text) return;
-                utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = 'en-US'; // or 'sw' for Swahili, but system might not support
-                utterance.rate = 0.9;
-                utterance.onstart = function() {
-                    readPageBtn.style.display = 'none';
-                    stopReadBtn.style.display = 'inline-block';
-                };
-                utterance.onend = function() {
-                    readPageBtn.style.display = 'inline-block';
-                    stopReadBtn.style.display = 'none';
-                };
-                utterance.onerror = function() {
-                    readPageBtn.style.display = 'inline-block';
-                    stopReadBtn.style.display = 'none';
-                };
-                synth.speak(utterance);
-            });
-
-            stopReadBtn.addEventListener('click', function() {
-                synth.cancel();
-                readPageBtn.style.display = 'inline-block';
-                stopReadBtn.style.display = 'none';
-            });
-
-            // Close panel when clicking outside
-            document.addEventListener('click', function(e) {
-                if (!panel.contains(e.target) && e.target !== toggle) {
-                    content.style.display = 'none';
-                    panel.setAttribute('aria-hidden', 'true');
-                }
-            });
-        })();
+    // ===== Accessibility Panel =====
+    (function() {
+        const panel = document.getElementById('accessibilityPanel');
+        const toggle = document.getElementById('panelToggle');
+        const content = document.getElementById('panelContent');
+        const slider = document.getElementById('textSizeSlider');
+        const sizeVal = document.getElementById('textSizeValue');
+        const readBtn = document.getElementById('readPageBtn');
+        const stopBtn = document.getElementById('stopReadBtn');
+        const main = document.getElementById('mainContent');
+        toggle.addEventListener('click', function() {
+            const open = content.style.display === 'block';
+            content.style.display = open ? 'none' : 'block';
+            panel.setAttribute('aria-hidden', open);
+        });
+        const sz = localStorage.getItem('textSize') || 100;
+        slider.value = sz; sizeVal.textContent = sz + '%';
+        document.documentElement.style.fontSize = (16 * sz / 100) + 'px';
+        slider.addEventListener('input', function() {
+            sizeVal.textContent = this.value + '%';
+            document.documentElement.style.fontSize = (16 * this.value / 100) + 'px';
+            localStorage.setItem('textSize', this.value);
+        });
+        let synth = window.speechSynthesis;
+        readBtn.addEventListener('click', function() {
+            if (synth.speaking) synth.cancel();
+            const u = new SpeechSynthesisUtterance(main.innerText.trim());
+            u.lang = 'sw-TZ'; u.rate = 0.9;
+            u.onstart = () => { readBtn.style.display='none'; stopBtn.style.display='inline-block'; };
+            u.onend = u.onerror = () => { readBtn.style.display='inline-block'; stopBtn.style.display='none'; };
+            synth.speak(u);
+        });
+        stopBtn.addEventListener('click', () => { synth.cancel(); readBtn.style.display='inline-block'; stopBtn.style.display='none'; });
+        document.addEventListener('click', e => { if (!panel.contains(e.target)) { content.style.display='none'; panel.setAttribute('aria-hidden','true'); } });
+    })();
     </script>
 </body>
 </html>
