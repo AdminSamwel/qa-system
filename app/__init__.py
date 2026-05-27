@@ -1,4 +1,5 @@
 import json
+import click
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
@@ -51,5 +52,27 @@ def create_app(config_class=Config):
         if current_user.is_authenticated:
             current_user.last_active = datetime.now(timezone.utc).replace(tzinfo=None)
             db.session.commit()
+
+    # ── CLI commands ──────────────────────────────────────────────────────────
+
+    @app.cli.command('seed-db')
+    def seed_db_command():
+        """Seed the database with initial demo data."""
+        import sys
+        import os
+        # seed_data.py lives at the project root (one level up from app/)
+        sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+        from seed_data import seed
+        seed()
+        click.echo('seed-db done.')
+
+    @app.cli.command('seed-templates')
+    def seed_templates_command():
+        """Seed the standard evaluation form templates."""
+        from app.utils.template_seeder import seed_templates
+        created, skipped = seed_templates()
+        click.echo(f'seed-templates done: {created} created, {skipped} skipped.')
+
+    # ─────────────────────────────────────────────────────────────────────────
 
     return app
